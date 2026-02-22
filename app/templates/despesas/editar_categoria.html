@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Categoria - {{ categoria.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2>
+                <i class="fas fa-edit me-2"></i>Editar Categoria
+                <small class="text-muted">{{ categoria.nome }}</small>
+            </h2>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0"><i class="fas fa-tag me-2"></i>Editar Categoria</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Nome -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-heading me-2"></i>Nome da Categoria <span class="text-danger">*</span>
+                            </label>
+                            {{ form.nome(class="form-control" + (" is-invalid" if form.nome.errors else ""),
+                                         placeholder="Ex: Contas de Consumo") }}
+                            {% if form.nome.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.nome.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Nome único para identificar a categoria</div>
+                        </div>
+                        
+                        <!-- Descrição -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-align-left me-2"></i>Descrição
+                            </label>
+                            {{ form.descricao(class="form-control" + (" is-invalid" if form.descricao.errors else ""),
+                                              placeholder="Descrição opcional da categoria",
+                                              rows="3") }}
+                            {% if form.descricao.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.descricao.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Descreva o tipo de despesas desta categoria</div>
+                        </div>
+                        
+                        <!-- Informações adicionais -->
+                        <div class="alert alert-info">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <i class="fas fa-calendar me-2"></i>
+                                    <strong>Criada em:</strong> {{ categoria.created_at.strftime('%d/%m/%Y') }}
+                                </div>
+                                <div class="col-md-6">
+                                    <i class="fas fa-list me-2"></i>
+                                    <strong>Despesas:</strong> {{ categoria.despesas | count }} registros
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <!-- Botões -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('despesas.lista_categorias') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Voltar
+                            </a>
+                            
+                            {% if categoria.despesas | count == 0 %}
+                            <button type="button" class="btn btn-danger" onclick="confirmarExclusao()">
+                                <i class="fas fa-trash me-2"></i>Excluir Categoria
+                            </button>
+                            {% endif %}
+                            
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-save me-2"></i>Salvar Alterações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Estatísticas da Categoria -->
+            <div class="card mt-3">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Estatísticas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="text-center p-3 border rounded">
+                                <h6>Total de Despesas</h6>
+                                <h3>{{ categoria.despesas | count }}</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-center p-3 border rounded">
+                                <h6>Valor Total</h6>
+                                <h3 class="text-danger">R$ {{ "%.2f"|format(categoria.despesas|sum(attribute='valor')) }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if categoria.despesas | count > 0 %}
+                    <div class="mt-3">
+                        <h6>Últimas 3 Despesas:</h6>
+                        <ul class="list-group">
+                            {% for despesa in categoria.despesas|sort(attribute='data_despesa', reverse=true) %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                {{ despesa.data_despesa.strftime('%d/%m/%Y') }} - {{ despesa.descricao }}
+                                <span class="badge bg-danger rounded-pill">R$ {{ "%.2f"|format(despesa.valor) }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Formulário oculto para exclusão -->
+<form id="form-excluir" method="POST" action="{{ url_for('despesas.excluir_categoria', id=categoria.id) }}" style="display: none;">
+    <input type="hidden" name="csrf_token" value="">
+</form>
+
+<script>
+function confirmarExclusao() {
+    if (confirm('⚠️ Tem certeza que deseja excluir esta categoria?\n\nEsta ação não pode ser desfeita.')) {
+        document.getElementById('form-excluir').submit();
+    }
+}
+
+// Validação em tempo real para nome único (opcional)
+document.querySelector('input[name="nome"]').addEventListener('blur', function() {
+    const nomeOriginal = "{{ categoria.nome }}";
+    const nomeNovo = this.value;
+    
+    if (nomeNovo !== nomeOriginal && nomeNovo.length > 2) {
+        fetch(`/despesas/api/verificar-categoria?nome=${encodeURIComponent(nomeNovo)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.existe) {
+                    this.classList.add('is-invalid');
+                    const feedback = this.nextElementSibling;
+                    if (feedback && feedback.classList.contains('invalid-feedback')) {
+                        feedback.textContent = 'Já existe uma categoria com este nome!';
+                    }
+                } else {
+                    this.classList.remove('is-invalid');
+                }
+            })
+            .catch(error => console.error('Erro:', error));
+    }
+});
+</script>
+
+<style>
+.card {
+    border-radius: 10px;
+    border: none;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+.card-header {
+    border-radius: 10px 10px 0 0 !important;
+}
+.btn {
+    border-radius: 5px;
+}
+</style>
+{% endblock %}

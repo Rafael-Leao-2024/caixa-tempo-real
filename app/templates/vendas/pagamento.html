@@ -1,0 +1,363 @@
+{% extends "base.html" %}
+
+{% block title %}Registrar Pagamento - Venda #{{ venda.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Cabeçalho -->
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h2>
+                <i class="fas fa-money-bill-wave me-2"></i>Registrar Pagamento
+                <small class="text-muted">Venda #{{ venda.id }} - {{ venda.cliente.nome }}</small>
+            </h2>
+            <a href="{{ url_for('vendas.detalhe_venda', id=venda.id) }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Voltar para Venda
+            </a>
+        </div>
+    </div>
+    
+    <!-- Resumo da Venda -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Valor Total</h6>
+                    <h3>R$ {{ "%.2f"|format(venda.valor_total) }}</h3>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Valor Pago</h6>
+                    <h3>R$ {{ "%.2f"|format(venda.valor_pago) }}</h3>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Saldo Restante</h6>
+                    <h3>R$ {{ "%.2f"|format(venda.valor_total - venda.valor_pago) }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Barra de Progresso -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h6>Progresso de Pagamento</h6>
+                    {% set percentual = (venda.valor_pago / venda.valor_total * 100) %}
+                    <div class="progress" style="height: 30px;">
+                        <div class="progress-bar bg-success progress-bar-striped" 
+                             role="progressbar" 
+                             style="width: {{ percentual }}%;"
+                             aria-valuenow="{{ percentual }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                            {{ "%.1f"|format(percentual) }}%
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-2">
+                        <span>Pago: <strong>R$ {{ "%.2f"|format(venda.valor_pago) }}</strong></span>
+                        <span>Restante: <strong class="text-warning">R$ {{ "%.2f"|format(venda.valor_total - venda.valor_pago) }}</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Formulário de Pagamento -->
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-money-check me-2"></i>Registrar Pagamento</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="formPagamento" class="needs-validation" novalidate>
+                        {{ form.hidden_tag() }}
+                        <!-- CSRF token já está incluído no form.hidden_tag() -->
+                        
+                        <!-- Valor do Pagamento -->
+                        <div class="mb-4">
+                            <label for="valor" class="form-label">
+                                <i class="fas fa-dollar-sign me-2"></i>Valor do Pagamento <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text">R$</span>
+                                {{ form.valor(class="form-control" + (" is-invalid" if form.valor.errors else ""),
+                                             id="valor", type="number", step="0.01", min="0.01",
+                                             max=venda.valor_total - venda.valor_pago,
+                                             placeholder="0.00") }}
+                            </div>
+                            {% if form.valor.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.valor.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="form-text">
+                                    Valor máximo: <strong>R$ {{ "%.2f"|format(venda.valor_total - venda.valor_pago) }}</strong>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Forma de Pagamento -->
+                        <div class="mb-4">
+                            <label for="forma_pagamento" class="form-label">
+                                <i class="fas fa-credit-card me-2"></i>Forma de Pagamento <span class="text-danger">*</span>
+                            </label>
+                            {{ form.forma_pagamento(class="form-select form-select-lg" + (" is-invalid" if form.forma_pagamento.errors else ""), id="forma_pagamento") }}
+                            {% if form.forma_pagamento.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.forma_pagamento.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Observações -->
+                        <div class="mb-4">
+                            <label for="observacoes" class="form-label">
+                                <i class="fas fa-comment me-2"></i>Observações
+                            </label>
+                            {{ form.observacoes(class="form-control" + (" is-invalid" if form.observacoes.errors else ""),
+                                                id="observacoes", rows="3",
+                                                placeholder="Observações sobre o pagamento...") }}
+                            {% if form.observacoes.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.observacoes.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Opções rápidas de valor -->
+                        <div class="mb-4">
+                            <label class="form-label">Valores Sugeridos</label>
+                            <div class="btn-group w-100" role="group">
+                                <button type="button" class="btn btn-outline-primary" onclick="setValor(100)">
+                                    R$ 100
+                                </button>
+                                <button type="button" class="btn btn-outline-primary" onclick="setValor(200)">
+                                    R$ 200
+                                </button>
+                                <button type="button" class="btn btn-outline-primary" onclick="setValor(500)">
+                                    R$ 500
+                                </button>
+                                <button type="button" class="btn btn-outline-primary" onclick="setValorRestante()">
+                                    Restante
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <!-- Informações adicionais -->
+                        <div class="alert alert-info mb-4">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <i class="fas fa-user me-2"></i>
+                                    <strong>Cliente:</strong> {{ venda.cliente.nome }}
+                                </div>
+                                <div class="col-md-6">
+                                    <i class="fas fa-calendar me-2"></i>
+                                    <strong>Data da Venda:</strong> {{ venda.data_venda.strftime('%d/%m/%Y') }}
+                                </div>
+                            </div>
+                            {% if venda.cliente.tipo_pagamento == 'prazo' %}
+                            <div class="row mt-2">
+                                <div class="col-md-6">
+                                    <i class="fas fa-chart-line me-2"></i>
+                                    <strong>Limite:</strong> R$ {{ "%.2f"|format(venda.cliente.limite_credito) }}
+                                </div>
+                                <div class="col-md-6">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <strong>Saldo Devedor:</strong> R$ {{ "%.2f"|format(venda.cliente.saldo_devedor) }}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Botões -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('vendas.detalhe_venda', id=venda.id) }}" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg" id="btnRegistrar">
+                                <i class="fas fa-save me-2"></i>Registrar Pagamento
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Últimos pagamentos -->
+            {% if venda.pagamentos %}
+            <div class="card mt-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Últimos Pagamentos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Valor</th>
+                                    <th>Forma</th>
+                                    <th>Recebedor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pagamento in venda.pagamentos[-3:]|reverse %}
+                                <tr>
+                                    <td>{{ pagamento.data_pagamento.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td><strong>R$ {{ "%.2f"|format(pagamento.valor) }}</strong></td>
+                                    <td>
+                                        {% if pagamento.forma_pagamento == 'dinheiro' %}
+                                            <span class="badge bg-success">Dinheiro</span>
+                                        {% elif pagamento.forma_pagamento == 'cartao' %}
+                                            <span class="badge bg-primary">Cartão</span>
+                                        {% elif pagamento.forma_pagamento == 'pix' %}
+                                            <span class="badge bg-info">PIX</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ pagamento.forma_pagamento }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ pagamento.recebedor.nome if pagamento.recebedor else 'N/A' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Função para definir valor
+function setValor(valor) {
+    const inputValor = document.getElementById('valor');
+    const valorRestante = {{ venda.valor_total - venda.valor_pago }};
+    
+    if (valor > valorRestante) {
+        alert(`Valor máximo permitido: R$ ${valorRestante.toFixed(2)}`);
+        inputValor.value = valorRestante.toFixed(2);
+    } else {
+        inputValor.value = valor.toFixed(2);
+    }
+    
+    // Disparar evento de change para atualizar validação
+    inputValor.dispatchEvent(new Event('change'));
+}
+
+// Função para definir valor restante
+function setValorRestante() {
+    const valorRestante = {{ venda.valor_total - venda.valor_pago }};
+    document.getElementById('valor').value = valorRestante.toFixed(2);
+    document.getElementById('valor').dispatchEvent(new Event('change'));
+}
+
+// Validação em tempo real
+document.getElementById('valor').addEventListener('input', function() {
+    const valor = parseFloat(this.value) || 0;
+    const valorRestante = {{ venda.valor_total - venda.valor_pago }};
+    const btnRegistrar = document.getElementById('btnRegistrar');
+    
+    // Remover classes anteriores
+    this.classList.remove('is-invalid', 'is-valid');
+    
+    // Encontrar ou criar feedback
+    let feedback = this.nextElementSibling;
+    while (feedback && !feedback.classList.contains('invalid-feedback')) {
+        feedback = feedback.nextElementSibling;
+    }
+    
+    if (valor <= 0) {
+        this.classList.add('is-invalid');
+        if (feedback) {
+            feedback.textContent = 'O valor deve ser maior que zero';
+        }
+        btnRegistrar.disabled = true;
+    } else if (valor > valorRestante) {
+        this.classList.add('is-invalid');
+        if (feedback) {
+            feedback.textContent = `Valor excede o restante (R$ ${valorRestante.toFixed(2)})`;
+        }
+        btnRegistrar.disabled = true;
+    } else {
+        this.classList.add('is-valid');
+        btnRegistrar.disabled = false;
+    }
+});
+
+// Confirmar pagamento
+document.getElementById('formPagamento').addEventListener('submit', function(e) {
+    const valor = parseFloat(document.getElementById('valor').value) || 0;
+    const valorRestante = {{ venda.valor_total - venda.valor_pago }};
+    const forma = document.getElementById('forma_pagamento').value;
+    
+    if (!forma) {
+        e.preventDefault();
+        alert('Selecione a forma de pagamento!');
+        return;
+    }
+    
+    if (valor <= 0) {
+        e.preventDefault();
+        alert('Digite um valor válido!');
+        return;
+    }
+    
+    if (valor > valorRestante) {
+        e.preventDefault();
+        alert(`O valor não pode ser maior que R$ ${valorRestante.toFixed(2)}`);
+        return;
+    }
+    
+    let mensagem = `Confirmar pagamento de R$ ${valor.toFixed(2)} em ${forma}?`;
+    
+    if (Math.abs(valor - valorRestante) < 0.01) {
+        mensagem = '✅ Este pagamento irá QUITAR a venda. ' + mensagem;
+    }
+    
+    if (!confirm(mensagem)) {
+        e.preventDefault();
+    }
+});
+
+// Formatar valor enquanto digita
+document.getElementById('valor').addEventListener('blur', function() {
+    let valor = parseFloat(this.value) || 0;
+    this.value = valor.toFixed(2);
+});
+
+// Inicializar com valor restante
+document.addEventListener('DOMContentLoaded', function() {
+    const valorRestante = {{ venda.valor_total - venda.valor_pago }};
+    if (valorRestante > 0) {
+        document.getElementById('valor').value = valorRestante.toFixed(2);
+    }
+    
+    // Habilitar/desabilitar botão inicialmente
+    const valor = parseFloat(document.getElementById('valor').value) || 0;
+    document.getElementById('btnRegistrar').disabled = (valor <= 0);
+});
+</script>
+{% endblock %}

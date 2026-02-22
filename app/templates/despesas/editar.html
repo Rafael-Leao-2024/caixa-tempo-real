@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Despesa - {{ despesa.descricao }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2>
+                <i class="fas fa-edit me-2"></i>Editar Despesa
+                <small class="text-muted">{{ despesa.descricao }}</small>
+            </h2>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0"><i class="fas fa-edit me-2"></i>Editar Despesa</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="needs-validation" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Descrição -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-align-left me-2"></i>Descrição <span class="text-danger">*</span>
+                            </label>
+                            {{ form.descricao(class="form-control" + (" is-invalid" if form.descricao.errors else "")) }}
+                            {% if form.descricao.errors %}
+                                <div class="invalid-feedback">{{ form.descricao.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <!-- Valor -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-dollar-sign me-2"></i>Valor (R$) <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    {{ form.valor(class="form-control" + (" is-invalid" if form.valor.errors else ""),
+                                                  type="number", step="0.01", min="0.01") }}
+                                </div>
+                                {% if form.valor.errors %}
+                                    <div class="invalid-feedback">{{ form.valor.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Data -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-calendar me-2"></i>Data da Despesa <span class="text-danger">*</span>
+                                </label>
+                                {{ form.data_despesa(class="form-control" + (" is-invalid" if form.data_despesa.errors else "")) }}
+                                {% if form.data_despesa.errors %}
+                                    <div class="invalid-feedback">{{ form.data_despesa.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <!-- Categoria -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-tag me-2"></i>Categoria <span class="text-danger">*</span>
+                                </label>
+                                {{ form.categoria_id(class="form-select" + (" is-invalid" if form.categoria_id.errors else "")) }}
+                                {% if form.categoria_id.errors %}
+                                    <div class="invalid-feedback">{{ form.categoria_id.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Forma de Pagamento -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-credit-card me-2"></i>Forma de Pagamento <span class="text-danger">*</span>
+                                </label>
+                                {{ form.forma_pagamento(class="form-select" + (" is-invalid" if form.forma_pagamento.errors else "")) }}
+                                {% if form.forma_pagamento.errors %}
+                                    <div class="invalid-feedback">{{ form.forma_pagamento.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Observações -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-comment me-2"></i>Observações
+                            </label>
+                            {{ form.observacoes(class="form-control" + (" is-invalid" if form.observacoes.errors else ""),
+                                                rows="3") }}
+                            {% if form.observacoes.errors %}
+                                <div class="invalid-feedback">{{ form.observacoes.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Info adicional -->
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Registrado por: <strong>{{ despesa.usuario.nome }}</strong> em {{ despesa.data_registro.strftime('%d/%m/%Y %H:%M') }}
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <!-- Botões -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('despesas.lista_despesas') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Voltar
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-save me-2"></i>Salvar Alterações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

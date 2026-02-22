@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Sistema de Caixa{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-lg border-0 rounded-lg mt-5">
+                <div class="card-header bg-primary text-white text-center py-4">
+                    <h3 class="mb-0">
+                        <i class="fas fa-motorcycle me-2"></i>Placas System
+                    </h3>
+                    <p class="mb-0 mt-2 small">Sistema de Gerenciamento de Caixa</p>
+                </div>
+                
+                <div class="card-body p-4">
+                    <!-- Flash Messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <h5 class="text-center text-muted mb-4">Acesse sua conta</h5>
+                    
+                    <!-- Botão de Login com Google -->
+                    <div class="d-grid gap-3">
+                        <a href="{{ google_auth_url }}" class="btn btn-lg btn-outline-danger">
+                            <i class="fab fa-google me-2"></i>
+                            Entrar com Google
+                        </a>
+                        
+                        <div class="text-center">
+                            <small class="text-muted">
+                                <i class="fas fa-shield-alt me-1"></i>
+                                Apenas emails @gmail.com autorizados
+                            </small>
+                        </div>
+                        
+                        <hr class="my-3">
+                        
+                        <div class="text-center">
+                            <small class="text-muted">
+                                <strong>Dica:</strong> Use sua conta Google corporativa ou pessoal
+                            </small>
+                        </div>
+                        
+                        <!-- Info adicional para proprietário -->
+                        <div class="alert alert-info small mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Primeiro acesso?</strong>
+                            <p class="mb-0 mt-1">
+                                O primeiro email cadastrado será o proprietário. 
+                                Configure a variável OWNER_EMAIL no .env para definir qual email terá privilégios de admin.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-footer text-center py-3 bg-light">
+                    <div class="small text-muted">
+                        <i class="fas fa-lock me-1"></i>
+                        Autenticação segura via Google
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Instruções para admin -->
+            <div class="card mt-3 border-warning">
+                <div class="card-body py-2">
+                    <small class="text-warning">
+                        <i class="fas fa-tools me-1"></i>
+                        <strong>Para configuração:</strong> Adicione OWNER_EMAIL=seu-email@gmail.com no arquivo .env
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+    }
+    
+    .card {
+        backdrop-filter: blur(10px);
+        background-color: rgba(255, 255, 255, 0.98);
+        border: none;
+    }
+    
+    .btn-outline-danger {
+        border-width: 2px;
+        font-weight: 500;
+        padding: 12px;
+    }
+    
+    .btn-outline-danger:hover {
+        background-color: #ea4335;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(234, 67, 53, 0.3);
+    }
+</style>
+{% endblock %}

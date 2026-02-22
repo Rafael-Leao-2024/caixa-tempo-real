@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block title %}Lista de Clientes - Sistema de Caixa{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h2>
+                <i class="fas fa-users me-2"></i>Clientes
+                <small class="text-muted">Gerenciamento de clientes</small>
+            </h2>
+            <a href="{{ url_for('clientes.novo_cliente') }}" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-2"></i>Novo Cliente
+            </a>
+        </div>
+    </div>
+    
+    <!-- Filtros e Busca -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-search me-2"></i>Buscar Clientes</h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" name="busca" placeholder="Nome ou telefone..." 
+                                   value="{{ request.args.get('busca', '') }}">
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" name="tipo">
+                                <option value="">Todos os tipos</option>
+                                <option value="vista" {% if request.args.get('tipo') == 'vista' %}selected{% endif %}>À Vista</option>
+                                <option value="prazo" {% if request.args.get('tipo') == 'prazo' %}selected{% endif %}>A Prazo</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" name="status">
+                                <option value="">Todos</option>
+                                <option value="devedor" {% if request.args.get('status') == 'devedor' %}selected{% endif %}>Com Débito</option>
+                                <option value="regular" {% if request.args.get('status') == 'regular' %}selected{% endif %}>Regulares</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-filter me-2"></i>Filtrar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lista de Clientes -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-list me-2"></i>Clientes Cadastrados</h5>
+                    <span class="badge bg-light text-dark">Total: {{ clientes.total }}</span>
+                </div>
+                <div class="card-body">
+                    {% if clientes.items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Nome</th>
+                                    <th>Telefone</th>
+                                    <th>Email</th>
+                                    <th>Tipo</th>
+                                    <th>Limite</th>
+                                    <th>Saldo Devedor</th>
+                                    <th>Status</th>
+                                    <th>Desde</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cliente in clientes.items %}
+                                <tr class="{% if cliente.saldo_devedor > 0 %}table-warning{% endif %}">
+                                    <td>{{ loop.index + (clientes.page - 1) * clientes.per_page }}</td>
+                                    <td>
+                                        <strong>{{ cliente.nome }}</strong>
+                                        {% if cliente.saldo_devedor > cliente.limite_credito %}
+                                            <i class="fas fa-exclamation-triangle text-danger ms-2" 
+                                               title="Limite excedido"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if cliente.telefone %}
+                                            <i class="fas fa-phone me-1"></i>{{ cliente.telefone }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if cliente.email %}
+                                            <i class="fas fa-envelope me-1"></i>{{ cliente.email }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if cliente.tipo_pagamento == 'vista' %}
+                                            <span class="badge bg-success">À Vista</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">A Prazo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>R$ {{ "%.2f"|format(cliente.limite_credito) }}</td>
+                                    <td>
+                                        {% if cliente.saldo_devedor > 0 %}
+                                            <span class="text-danger fw-bold">
+                                                R$ {{ "%.2f"|format(cliente.saldo_devedor) }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-success">R$ 0,00</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if cliente.saldo_devedor == 0 %}
+                                            <span class="badge bg-success">Regular</span>
+                                        {% elif cliente.saldo_devedor < cliente.limite_credito %}
+                                            <span class="badge bg-warning">Pendente</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Crítico</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ cliente.created_at.strftime('%d/%m/%Y') }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('clientes.detalhe_cliente', id=cliente.id) }}" 
+                                               class="btn btn-sm btn-info" title="Detalhes">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('clientes.editar_cliente', id=cliente.id) }}" 
+                                               class="btn btn-sm btn-warning" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-success" 
+                                                    onclick="novaVenda({{ cliente.id }})" title="Nova Venda">
+                                                <i class="fas fa-shopping-cart"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Paginação -->
+                    {% if clientes.pages > 1 %}
+                    <nav aria-label="Navegação de páginas" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if clientes.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('clientes.lista_clientes', page=clientes.prev_num, busca=request.args.get('busca', ''), tipo=request.args.get('tipo', ''), status=request.args.get('status', '')) }}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="fas fa-chevron-left"></i></span>
+                            </li>
+                            {% endif %}
+                            
+                            {% for page_num in clientes.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                                {% if page_num %}
+                                    {% if page_num == clientes.page %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('clientes.lista_clientes', page=page_num, busca=request.args.get('busca', ''), tipo=request.args.get('tipo', ''), status=request.args.get('status', '')) }}">
+                                            {{ page_num }}
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if clientes.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('clientes.lista_clientes', page=clientes.next_num, busca=request.args.get('busca', ''), tipo=request.args.get('tipo', ''), status=request.args.get('status', '')) }}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="fas fa-chevron-right"></i></span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-users fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">Nenhum cliente cadastrado</h5>
+                        <p>Comece cadastrando seu primeiro cliente!</p>
+                        <a href="{{ url_for('clientes.novo_cliente') }}" class="btn btn-primary">
+                            <i class="fas fa-plus-circle me-2"></i>Novo Cliente
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Cards com estatísticas rápidas (opcional) -->
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total de Clientes</h6>
+                    <h3>{{ clientes.total }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Clientes Regulares</h6>
+                    <h3>{{ clientes.items|selectattr('saldo_devedor', 'equalto', 0)|list|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Com Débito</h6>
+                    <h3>{{ clientes.items|selectattr('saldo_devedor', '>', 0)|list|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total a Receber</h6>
+                    <h3>R$ {{ "%.2f"|format(clientes.items|sum(attribute='saldo_devedor')) }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function novaVenda(clienteId) {
+    // Redirecionar para nova venda com o cliente selecionado
+    window.location.href = "{{ url_for('vendas.nova_venda') }}?cliente_id=" + clienteId;
+}
+
+// Atualizar estatísticas via AJAX (opcional)
+function atualizarEstatisticas() {
+    fetch('/api/estatisticas-clientes')
+        .then(response => response.json())
+        .then(data => {
+            // Atualizar cards se necessário
+            console.log('Estatísticas atualizadas:', data);
+        })
+        .catch(error => console.error('Erro:', error));
+}
+
+// Atualizar a cada 30 segundos
+setInterval(atualizarEstatisticas, 30000);
+</script>
+{% endblock %}

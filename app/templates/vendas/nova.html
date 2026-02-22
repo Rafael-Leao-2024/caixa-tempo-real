@@ -1,0 +1,540 @@
+{% extends "base.html" %}
+
+{% block title %}Nova Venda - Sistema de Caixa{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2>
+                <i class="fas fa-plus-circle me-2"></i>Nova Venda
+                <small class="text-muted">Registrar venda de placas</small>
+            </h2>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <form method="POST" id="formVenda" class="needs-validation" novalidate>
+                {{ form.hidden_tag() }}
+                <input type="hidden" name="csrf_token" value="">
+                
+                <!-- Informações básicas da venda -->
+                <div class="card shadow mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Informações da Venda</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Cliente -->
+                            <div class="col-md-6 mb-3">
+                                <label for="cliente_id" class="form-label">
+                                    <i class="fas fa-user me-2"></i>Cliente <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    {{ form.cliente_id(class="form-select" + (" is-invalid" if form.cliente_id.errors else ""), id="cliente_id") }}
+                                    <a href="{{ url_for('clientes.novo_cliente') }}" class="btn btn-outline-success" target="_blank">
+                                        <i class="fas fa-plus"></i> Novo
+                                    </a>
+                                </div>
+                                {% if form.cliente_id.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.cliente_id.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Tipo de Pagamento -->
+                            <div class="col-md-6 mb-3">
+                                <label for="tipo_pagamento" class="form-label">
+                                    <i class="fas fa-credit-card me-2"></i>Tipo de Pagamento <span class="text-danger">*</span>
+                                </label>
+                                {{ form.tipo_pagamento(class="form-select" + (" is-invalid" if form.tipo_pagamento.errors else ""), id="tipo_pagamento") }}
+                                {% if form.tipo_pagamento.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.tipo_pagamento.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Informações do cliente -->
+                        <div class="row" id="infoCliente" style="display: none;">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <strong>Limite:</strong> R$ <span id="cliente_limite">0,00</span>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <strong>Saldo Devedor:</strong> R$ <span id="cliente_saldo">0,00</span>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <strong>Disponível:</strong> R$ <span id="cliente_disponivel">0,00</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Itens da Venda -->
+                <div class="card shadow mb-4">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-boxes me-2"></i>Itens da Venda</h5>
+                        <button type="button" class="btn btn-light btn-sm" id="adicionarItem">
+                            <i class="fas fa-plus me-1"></i>Adicionar Item
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered" id="tabelaItens">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Produto</th>
+                                        <th>Quantidade</th>
+                                        <th>Preço Unit.</th>
+                                        <th>Subtotal</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="itensCorpo">
+                                    {% for item in form.itens %}
+                                    <tr class="item-row">
+                                        <td>
+                                            {{ item.produto_id(class="form-select produto-select") }}
+                                            {% if item.produto_id.errors %}
+                                                <div class="text-danger small">{{ item.produto_id.errors[0] }}</div>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {{ item.quantidade(class="form-control quantidade", value=1, min="1") }}
+                                            {% if item.quantidade.errors %}
+                                                <div class="text-danger small">{{ item.quantidade.errors[0] }}</div>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control preco-unitario" readonly value="R$ 0,00">
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control subtotal" readonly value="R$ 0,00">
+                                        </td>
+                                        <td class="text-center">
+                                            <button type="button" class="btn btn-danger btn-sm btn-remover-item">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-primary">
+                                        <th colspan="3" class="text-end">TOTAL:</th>
+                                        <th>
+                                            <span id="totalVenda">R$ 0,00</span>
+                                            <input type="hidden" id="totalVendaInput" name="total_venda">
+                                        </th>
+                                        <th></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        
+                        <!-- Observações -->
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <label for="observacoes" class="form-label">
+                                    <i class="fas fa-comment me-2"></i>Observações
+                                </label>
+                                {{ form.observacoes(class="form-control", rows="2", placeholder="Observações sobre a venda...", id="observacoes") }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Resumo e Ações -->
+                <div class="card shadow">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <div class="alert alert-warning mb-0" id="alertaCredito" style="display: none;">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <span id="mensagemCredito"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <a href="{{ url_for('vendas.vendas_ativas') }}" class="btn btn-secondary me-2">
+                                    <i class="fas fa-times me-1"></i>Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-success btn-lg" id="btnFinalizarVenda">
+                                    <i class="fas fa-save me-1"></i>Finalizar Venda
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Template para novos itens (escondido) -->
+<template id="itemTemplate">
+    <tr class="item-row">
+        <td>
+            <select name="itens-0-produto_id" class="form-select produto-select">
+                {% for produto in form.itens[0].produto_id.choices %}
+                <option value="{{ produto[0] }}">{{ produto[1] }}</option>
+                {% endfor %}
+            </select>
+        </td>
+        <td>
+            <input type="number" name="itens-0-quantidade" class="form-control quantidade" value="1" min="1">
+        </td>
+        <td>
+            <input type="text" class="form-control preco-unitario" readonly value="R$ 0,00">
+        </td>
+        <td>
+            <input type="text" class="form-control subtotal" readonly value="R$ 0,00">
+        </td>
+        <td class="text-center">
+            <button type="button" class="btn btn-danger btn-sm btn-remover-item">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    </tr>
+</template>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Dados dos produtos (preços)
+const produtos = {
+    {% for produto in form.itens[0].produto_id.choices %}
+    {{ produto[0] }}: {
+        nome: "{{ produto[1].split(' - R$')[0] }}",
+        preco: {{ produto[1].split('R$')[1].replace(',', '.').replace(' ', '') }}
+    },
+    {% endfor %}
+    0: { preco: 0 }
+};
+
+console.log('✅ Produtos carregados:', produtos);
+
+let itemCount = {{ form.itens|length }};
+
+// ========== FUNÇÕES AUXILIARES ==========
+function converterParaNumero(valorTexto) {
+    if (!valorTexto) return 0;
+    const numeroLimpo = valorTexto.toString()
+        .replace('R$ ', '')
+        .replace(/\./g, '')
+        .replace(',', '.');
+    return parseFloat(numeroLimpo) || 0;
+}
+
+function formatarMoeda(valor) {
+    return valor.toFixed(2).replace('.', ',');
+}
+
+// ========== FUNÇÕES DE CÁLCULO ==========
+function atualizarPreco(select) {
+    const row = select.closest('tr');
+    const produtoId = select.value;
+    const precoField = row.querySelector('.preco-unitario');
+    const quantidadeField = row.querySelector('.quantidade');
+    
+    const preco = produtos[produtoId] ? produtos[produtoId].preco : 0;
+    precoField.value = `R$ ${formatarMoeda(preco)}`;
+    
+    calcularSubtotal(quantidadeField);
+}
+
+function calcularSubtotal(input) {
+    const row = input.closest('tr');
+    const select = row.querySelector('.produto-select');
+    const produtoId = select.value;
+    const quantidade = parseInt(input.value) || 0;
+    
+    const preco = produtos[produtoId] ? produtos[produtoId].preco : 0;
+    const subtotal = preco * quantidade;
+    
+    const subtotalField = row.querySelector('.subtotal');
+    subtotalField.value = `R$ ${formatarMoeda(subtotal)}`;
+    
+    calcularTotal();
+}
+
+function calcularTotal() {
+    let total = 0;
+    document.querySelectorAll('.subtotal').forEach(function(field) {
+        const valor = converterParaNumero(field.value);
+        total += valor;
+    });
+    
+    document.getElementById('totalVenda').textContent = `R$ ${formatarMoeda(total)}`;
+    document.getElementById('totalVendaInput').value = total.toFixed(2);
+    
+    verificarLimiteCredito(total);
+}
+
+// ========== VERIFICAÇÃO DE LIMITE ==========
+function verificarLimiteCredito(total) {
+    console.log('🔍 Verificando limite - Total:', total);
+    
+    const tipoPagamento = document.getElementById('tipo_pagamento').value;
+    const alerta = document.getElementById('alertaCredito');
+    const mensagem = document.getElementById('mensagemCredito');
+    const btnSalvar = document.getElementById('btnFinalizarVenda');
+    const infoCliente = document.getElementById('infoCliente');
+    
+    // SEMPRE começar com botão habilitado
+    btnSalvar.disabled = false;
+    
+    if (tipoPagamento === 'prazo') {
+        // Verificar se cliente está selecionado
+        const clienteId = document.getElementById('cliente_id').value;
+        
+        if (!clienteId) {
+            alerta.style.display = 'block';
+            mensagem.textContent = '⚠️ Selecione um cliente para venda a prazo!';
+            btnSalvar.disabled = true;
+            console.log('❌ Cliente não selecionado');
+            return;
+        }
+        
+        // Verificar se informações do cliente estão visíveis
+        if (infoCliente.style.display === 'none') {
+            alerta.style.display = 'block';
+            mensagem.textContent = '⏳ Carregando informações do cliente...';
+            btnSalvar.disabled = false;
+            console.log('⏳ Aguardando informações do cliente');
+            return;
+        }
+        
+        // Obter valores
+        const limiteTexto = document.getElementById('cliente_limite').textContent;
+        const saldoTexto = document.getElementById('cliente_saldo').textContent;
+        const disponivelTexto = document.getElementById('cliente_disponivel').textContent;
+        
+        const limite = converterParaNumero(limiteTexto);
+        const saldo = converterParaNumero(saldoTexto);
+        const disponivel = converterParaNumero(disponivelTexto);
+        
+        console.log('📊 Valores do cliente:', {
+            limite: limite,
+            saldo: saldo,
+            disponivel: disponivel,
+            total: total
+        });
+        
+        if (total > disponivel) {
+            alerta.style.display = 'block';
+            mensagem.textContent = `❌ Limite excedido! Total: R$ ${formatarMoeda(total)} | Disponível: R$ ${formatarMoeda(disponivel)}`;
+            btnSalvar.disabled = true;
+            console.log('❌ Limite excedido - botão DESABILITADO');
+        } else {
+            alerta.style.display = 'none';
+            btnSalvar.disabled = false;
+            console.log('✅ Limite OK - botão HABILITADO');
+        }
+    } else {
+        // À vista - sempre habilitado
+        alerta.style.display = 'none';
+        btnSalvar.disabled = false;
+        console.log('✅ Pagamento à vista - botão HABILITADO');
+    }
+}
+
+// ========== GERENCIAMENTO DE ITENS ==========
+function adicionarItem() {
+    const template = document.getElementById('itemTemplate');
+    const clone = document.importNode(template.content, true);
+    
+    // Atualizar nomes dos campos
+    const select = clone.querySelector('select');
+    select.name = `itens-${itemCount}-produto_id`;
+    select.id = `itens-${itemCount}-produto_id`;
+    
+    const input = clone.querySelector('input.quantidade');
+    input.name = `itens-${itemCount}-quantidade`;
+    input.id = `itens-${itemCount}-quantidade`;
+    
+    document.getElementById('itensCorpo').appendChild(clone);
+    itemCount++;
+    
+    // Adicionar eventos aos novos elementos
+    const novaLinha = document.querySelector('#itensCorpo tr:last-child');
+    novaLinha.querySelector('.produto-select').addEventListener('change', function() {
+        atualizarPreco(this);
+    });
+    novaLinha.querySelector('.quantidade').addEventListener('input', function() {
+        calcularSubtotal(this);
+    });
+    novaLinha.querySelector('.btn-remover-item').addEventListener('click', function() {
+        removerItem(this);
+    });
+    
+    console.log('✅ Novo item adicionado');
+}
+
+function removerItem(botao) {
+    if (document.querySelectorAll('.item-row').length > 1) {
+        botao.closest('tr').remove();
+        calcularTotal();
+        console.log('✅ Item removido');
+    } else {
+        alert('A venda deve ter pelo menos um item.');
+    }
+}
+
+// ========== EVENTOS DO CLIENTE ==========
+function carregarInfoCliente(clienteId) {
+    console.log('🔄 Carregando informações do cliente:', clienteId);
+    btnSalvar.disabled = true;
+    
+    // Usar dados simulados com limite de R$ 10.000,00
+    const limite = 10000.00;
+    const saldo = 0;
+    const disponivel = limite - saldo;
+    
+    document.getElementById('cliente_limite').textContent = formatarMoeda(limite);
+    document.getElementById('cliente_saldo').textContent = formatarMoeda(saldo);
+    document.getElementById('cliente_disponivel').textContent = formatarMoeda(disponivel);
+    document.getElementById('infoCliente').style.display = 'block';
+    
+    const total = parseFloat(document.getElementById('totalVendaInput').value) || 0;
+    verificarLimiteCredito(total);
+    
+    console.log('✅ Informações do cliente carregadas');
+}
+
+// ========== INICIALIZAÇÃO ==========
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Inicializando página de nova venda...');
+    
+    // Garantir que o botão comece habilitado
+    document.getElementById('btnFinalizarVenda').disabled = false;
+    
+    // Se não houver itens, adicionar um
+    if (document.querySelectorAll('.item-row').length === 0) {
+        adicionarItem();
+    }
+    
+    // ===== EVENTOS DOS ITENS EXISTENTES =====
+    document.querySelectorAll('.produto-select').forEach(function(select) {
+        select.addEventListener('change', function() {
+            atualizarPreco(this);
+        });
+    });
+    
+    document.querySelectorAll('.quantidade').forEach(function(input) {
+        input.addEventListener('input', function() {
+            calcularSubtotal(this);
+        });
+    });
+    
+    document.querySelectorAll('.btn-remover-item').forEach(function(botao) {
+        botao.addEventListener('click', function() {
+            removerItem(this);
+        });
+    });
+    
+    // ===== EVENTO DO BOTÃO ADICIONAR ITEM =====
+    document.getElementById('adicionarItem').addEventListener('click', adicionarItem);
+    
+    // ===== EVENTO DO CLIENTE =====
+    document.getElementById('cliente_id').addEventListener('change', function() {
+        const clienteId = this.value;
+        if (clienteId) {
+            carregarInfoCliente(clienteId);
+        } else {
+            document.getElementById('infoCliente').style.display = 'none';
+            verificarLimiteCredito(parseFloat(document.getElementById('totalVendaInput').value) || 0);
+        }
+    });
+    
+    // ===== EVENTO DO TIPO DE PAGAMENTO =====
+    document.getElementById('tipo_pagamento').addEventListener('change', function() {
+        console.log('🔄 Tipo de pagamento alterado para:', this.value);
+        const total = parseFloat(document.getElementById('totalVendaInput').value) || 0;
+        verificarLimiteCredito(total);
+    });
+    
+    // ===== VERIFICAR PARÂMETROS DA URL =====
+    const urlParams = new URLSearchParams(window.location.search);
+    const clienteId = urlParams.get('cliente_id');
+    if (clienteId) {
+        console.log('📌 Cliente ID da URL:', clienteId);
+        const select = document.getElementById('cliente_id');
+        select.value = clienteId;
+        carregarInfoCliente(clienteId);
+    }
+    
+    const produtoId = urlParams.get('produto_id');
+    if (produtoId) {
+        console.log('📌 Produto ID da URL:', produtoId);
+        setTimeout(function() {
+            const primeiroSelect = document.querySelector('.produto-select');
+            if (primeiroSelect) {
+                primeiroSelect.value = produtoId;
+                atualizarPreco(primeiroSelect);
+            }
+        }, 500);
+    }
+    
+    // Forçar atualização dos preços para itens existentes
+    document.querySelectorAll('.produto-select').forEach(function(select) {
+        if (select.value) {
+            atualizarPreco(select);
+        }
+    });
+    
+    console.log('✅ Inicialização concluída');
+});
+
+// ========== VALIDAÇÃO DO FORMULÁRIO ==========
+document.getElementById('formVenda').addEventListener('submit', function(e) {
+    console.log('📝 Validando formulário...');
+    
+    const tipoPagamento = document.getElementById('tipo_pagamento').value;
+    const total = parseFloat(document.getElementById('totalVendaInput').value) || 0;
+    const clienteId = document.getElementById('cliente_id').value;
+    
+    // Validar cliente
+    if (!clienteId) {
+        e.preventDefault();
+        alert('❌ Selecione um cliente!');
+        return;
+    }
+    
+    // Validar itens
+    if (total <= 0) {
+        e.preventDefault();
+        alert('❌ A venda deve ter pelo menos um item com valor válido.');
+        return;
+    }
+    
+    // Validar limite para venda a prazo
+    if (tipoPagamento === 'prazo') {
+        const disponivelTexto = document.getElementById('cliente_disponivel').textContent;
+        const disponivel = converterParaNumero(disponivelTexto);
+        
+        if (total > disponivel) {
+            const confirmar = confirm(`⚠️ O valor total (R$ ${formatarMoeda(total)}) excede o limite disponível do cliente (R$ ${formatarMoeda(disponivel)}).\n\nDeseja continuar mesmo assim?`);
+            if (!confirmar) {
+                e.preventDefault();
+                return;
+            }
+        }
+    }
+    
+    console.log('✅ Formulário válido, enviando...');
+});
+</script>
+{% endblock %}

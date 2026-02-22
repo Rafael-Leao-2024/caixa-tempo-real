@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Sistema de Caixa{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4">
+        <i class="fas fa-chart-pie me-2"></i>Dashboard
+        <small class="text-muted">Fluxo em Tempo Real</small>
+    </h2>
+    
+    <!-- Cards de Resumo -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card card-dashboard bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">Vendas Hoje</h6>
+                            <h3 id="total-vendas-hoje">R$ {{ "%.2f"|format(total_vendas_hoje) }}</h3>
+                        </div>
+                        <i class="fas fa-shopping-cart fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card card-dashboard bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">Recebido Hoje</h6>
+                            <h3 id="total-recebido-hoje">R$ {{ "%.2f"|format(total_recebido_hoje) }}</h3>
+                        </div>
+                        <i class="fas fa-money-bill-wave fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card card-dashboard bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">A Receber</h6>
+                            <h3>R$ {{ "%.2f"|format(clientes_devedores|sum(attribute='saldo_devedor')) }}</h3>
+                        </div>
+                        <i class="fas fa-clock fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card card-dashboard bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">Vendas Hoje</h6>
+                            <h3 id="qtd-vendas-hoje">{{ vendas_hoje|length }}</h3>
+                        </div>
+                        <i class="fas fa-chart-bar fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Informações do Caixa Atual (se for operador) -->
+    {% if caixa_atual %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-cash-register me-2"></i>Caixa Atual: {{ caixa_atual.nome }}</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Localização:</strong> {{ caixa_atual.localizacao or 'Não informada' }}</p>
+                    <p><strong>Status:</strong> 
+                        <span class="badge bg-success">Ativo</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Gráfico e Lista de Devedores -->
+    <div class="row">
+        <div class="col-md-8 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Vendas dos Últimos 7 Dias</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="graficoVendas"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0 text-white"><i class="fas fa-exclamation-triangle me-2"></i>Clientes com Débito</h5>
+                </div>
+                <div class="card-body">
+                    {% if clientes_devedores %}
+                        <div class="list-group">
+                            {% for cliente in clientes_devedores %}
+                                <a href="{{ url_for('clientes.detalhe_cliente', id=cliente.id) }}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ cliente.nome }}</strong><br>
+                                            <small>Tel: {{ cliente.telefone or 'Não informado' }}</small>
+                                        </div>
+                                        <span class="badge bg-danger">R$ {{ "%.2f"|format(cliente.saldo_devedor) }}</span>
+                                    </div>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center mb-0">Nenhum cliente com débito</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Últimas Vendas -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Últimas Vendas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Data/Hora</th>
+                                    <th>Cliente</th>
+                                    <th>Valor</th>
+                                    <th>Status</th>
+                                    <th>Tipo</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for venda in vendas_hoje[:5] %}
+                                <tr>
+                                    <td>{{ venda.data_venda.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>{{ venda.cliente.nome }}</td>
+                                    <td>R$ {{ "%.2f"|format(venda.valor_total) }}</td>
+                                    <td>
+                                        {% if venda.status == 'pago' %}
+                                            <span class="status-badge status-pago">Pago</span>
+                                        {% elif venda.status == 'pendente' %}
+                                            <span class="status-badge status-pendente">Pendente</span>
+                                        {% else %}
+                                            <span class="status-badge status-parcial">Parcial</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if venda.tipo_pagamento == 'vista' %}
+                                            <span class="badge bg-success">À Vista</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">A Prazo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('vendas.detalhe_venda', id=venda.id) }}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center">Nenhuma venda hoje</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Gráfico de vendas
+    fetch('/relatorios/fluxo-tempo-real')
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('graficoVendas').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+                    datasets: [{
+                        label: 'Vendas (R$)',
+                        data: [1200, 1900, 1500, 2100, 1800, 500, 2100],
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        });
+</script>
+{% endblock %}

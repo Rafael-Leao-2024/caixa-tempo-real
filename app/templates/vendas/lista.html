@@ -1,0 +1,428 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if titulo %}
+        {{ titulo }} - Sistema de Caixa
+    {% else %}
+        Lista de Vendas - Sistema de Caixa
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h2>
+                <i class="fas fa-shopping-cart me-2"></i>
+                {% if titulo %}
+                    {{ titulo }}
+                {% else %}
+                    Vendas
+                {% endif %}
+                <small class="text-muted">Gerenciamento de vendas</small>
+            </h2>
+            <a href="{{ url_for('vendas.nova_venda') }}" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-2"></i>Nova Venda
+            </a>
+        </div>
+    </div>
+    
+    <!-- Filtros e Busca -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-filter me-2"></i>Filtros
+                        <button class="btn btn-sm btn-link float-end" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosCollapse">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </h5>
+                </div>
+                <div class="collapse show" id="filtrosCollapse">
+                    <div class="card-body">
+                        <form method="GET" class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Data Início</label>
+                                <input type="date" class="form-control" name="data_inicio" 
+                                       value="{{ request.args.get('data_inicio', '') }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Data Fim</label>
+                                <input type="date" class="form-control" name="data_fim" 
+                                       value="{{ request.args.get('data_fim', '') }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Status</label>
+                                <select class="form-select" name="status">
+                                    <option value="">Todos</option>
+                                    <option value="pago" {% if request.args.get('status') == 'pago' %}selected{% endif %}>Pago</option>
+                                    <option value="pendente" {% if request.args.get('status') == 'pendente' %}selected{% endif %}>Pendente</option>
+                                    <option value="parcial" {% if request.args.get('status') == 'parcial' %}selected{% endif %}>Parcial</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Tipo</label>
+                                <select class="form-select" name="tipo">
+                                    <option value="">Todos</option>
+                                    <option value="vista" {% if request.args.get('tipo') == 'vista' %}selected{% endif %}>À Vista</option>
+                                    <option value="prazo" {% if request.args.get('tipo') == 'prazo' %}selected{% endif %}>A Prazo</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Cliente</label>
+                                <input type="text" class="form-control" name="cliente" 
+                                       placeholder="Nome do cliente..." value="{{ request.args.get('cliente', '') }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Vendedor</label>
+                                <input type="text" class="form-control" name="vendedor" 
+                                       placeholder="Nome do vendedor..." value="{{ request.args.get('vendedor', '') }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Caixa</label>
+                                <input type="text" class="form-control" name="caixa" 
+                                       placeholder="Nome do caixa..." value="{{ request.args.get('caixa', '') }}">
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search me-2"></i>Filtrar
+                                </button>
+                                <a href="{{ url_for('vendas.todas_vendas') }}" class="btn btn-secondary">
+                                    <i class="fas fa-undo me-2"></i>Limpar
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Cards de Resumo -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total de Vendas</h6>
+                    <h3>{{ vendas.total }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Valor Total</h6>
+                    <h3>R$ {{ "%.2f"|format(vendas.items|sum(attribute='valor_total')) }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Valor Recebido</h6>
+                    <h3>R$ {{ "%.2f"|format(vendas.items|sum(attribute='valor_pago')) }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h6 class="card-title">A Receber</h6>
+                    <h3>R$ {{ "%.2f"|format(vendas.items|sum(attribute='valor_total') - vendas.items|sum(attribute='valor_pago')) }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lista de Vendas -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-list me-2"></i>Vendas Cadastradas</h5>
+                    <span class="badge bg-light text-dark">Página {{ vendas.page }} de {{ vendas.pages }}</span>
+                </div>
+                <div class="card-body">
+                    {% if vendas.items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Data/Hora</th>
+                                    <th>Cliente</th>
+                                    <th>Vendedor</th>
+                                    <th>Caixa</th>
+                                    <th>Valor Total</th>
+                                    <th>Valor Pago</th>
+                                    <th>Status</th>
+                                    <th>Tipo</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for venda in vendas.items %}
+                                <tr class="{% if venda.status == 'pendente' %}table-warning{% elif venda.status == 'pago' %}table-success{% endif %}">
+                                    <td>{{ loop.index + (vendas.page - 1) * vendas.per_page }}</td>
+                                    <td>{{ venda.data_venda.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>
+                                        <strong>{{ venda.cliente.nome }}</strong>
+                                        {% if venda.cliente.saldo_devedor > 0 %}
+                                            <i class="fas fa-exclamation-triangle text-warning ms-1" 
+                                               title="Cliente com débito"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ venda.vendedor.nome if venda.vendedor else 'N/A' }}</td>
+                                    <td>{{ venda.caixa_local.nome if venda.caixa_local else 'N/A' }}</td>
+                                    <td><strong>R$ {{ "%.2f"|format(venda.valor_total) }}</strong></td>
+                                    <td>R$ {{ "%.2f"|format(venda.valor_pago) }}</td>
+                                    <td>
+                                        {% if venda.status == 'pago' %}
+                                            <span class="badge bg-success">Pago</span>
+                                        {% elif venda.status == 'pendente' %}
+                                            <span class="badge bg-warning">Pendente</span>
+                                        {% else %}
+                                            <span class="badge bg-info">Parcial</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if venda.tipo_pagamento == 'vista' %}
+                                            <span class="badge bg-primary">À Vista</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">A Prazo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('vendas.detalhe_venda', id=venda.id) }}" 
+                                               class="btn btn-sm btn-info" title="Detalhes">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if venda.status != 'pago' %}
+                                            <a href="{{ url_for('vendas.registrar_pagamento', id=venda.id) }}" 
+                                               class="btn btn-sm btn-success" title="Registrar Pagamento">
+                                                <i class="fas fa-money-bill"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Paginação -->
+                    {% if vendas.pages > 1 %}
+                    <nav aria-label="Navegação de páginas" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if vendas.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('vendas.todas_vendas', page=vendas.prev_num, 
+                                    data_inicio=request.args.get('data_inicio', ''),
+                                    data_fim=request.args.get('data_fim', ''),
+                                    status=request.args.get('status', ''),
+                                    tipo=request.args.get('tipo', ''),
+                                    cliente=request.args.get('cliente', ''),
+                                    vendedor=request.args.get('vendedor', ''),
+                                    caixa=request.args.get('caixa', '')) }}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="fas fa-chevron-left"></i></span>
+                            </li>
+                            {% endif %}
+                            
+                            {% for page_num in vendas.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                                {% if page_num %}
+                                    {% if page_num == vendas.page %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('vendas.todas_vendas', page=page_num,
+                                            data_inicio=request.args.get('data_inicio', ''),
+                                            data_fim=request.args.get('data_fim', ''),
+                                            status=request.args.get('status', ''),
+                                            tipo=request.args.get('tipo', ''),
+                                            cliente=request.args.get('cliente', ''),
+                                            vendedor=request.args.get('vendedor', ''),
+                                            caixa=request.args.get('caixa', '')) }}">
+                                            {{ page_num }}
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if vendas.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('vendas.todas_vendas', page=vendas.next_num,
+                                    data_inicio=request.args.get('data_inicio', ''),
+                                    data_fim=request.args.get('data_fim', ''),
+                                    status=request.args.get('status', ''),
+                                    tipo=request.args.get('tipo', ''),
+                                    cliente=request.args.get('cliente', ''),
+                                    vendedor=request.args.get('vendedor', ''),
+                                    caixa=request.args.get('caixa', '')) }}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="fas fa-chevron-right"></i></span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-shopping-cart fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">Nenhuma venda encontrada</h5>
+                        <p>Não há vendas registradas com os filtros selecionados.</p>
+                        <a href="{{ url_for('vendas.nova_venda') }}" class="btn btn-primary">
+                            <i class="fas fa-plus-circle me-2"></i>Nova Venda
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Detalhes Rápidos (opcional) -->
+<div class="modal fade" id="detalhesModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-info-circle me-2"></i>Detalhes da Venda
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="detalhesConteudo">
+                Carregando...
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Função para exportar relatório (opcional)
+function exportarRelatorio() {
+    const dados = {
+        data_inicio: document.querySelector('input[name="data_inicio"]').value,
+        data_fim: document.querySelector('input[name="data_fim"]').value,
+        status: document.querySelector('select[name="status"]').value,
+        tipo: document.querySelector('select[name="tipo"]').value
+    };
+    
+    // Criar URL com parâmetros
+    const params = new URLSearchParams(dados);
+    window.location.href = "{{ url_for('relatorios.relatorio_diario') }}?" + params.toString();
+}
+
+// Função para ver detalhes rápidos (opcional - requer rota API)
+function verDetalhesRapido(vendaId) {
+    const modal = new bootstrap.Modal(document.getElementById('detalhesModal'));
+    document.getElementById('detalhesConteudo').innerHTML = 'Carregando...';
+    modal.show();
+    
+    // Buscar detalhes da venda via AJAX
+    fetch(`/api/venda/${vendaId}/detalhes`)
+        .then(response => response.json())
+        .then(data => {
+            let html = `
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <tr>
+                            <th>Cliente:</th>
+                            <td>${data.cliente}</td>
+                        </tr>
+                        <tr>
+                            <th>Data:</th>
+                            <td>${data.data}</td>
+                        </tr>
+                        <tr>
+                            <th>Valor Total:</th>
+                            <td>R$ ${data.valor_total}</td>
+                        </tr>
+                        <tr>
+                            <th>Valor Pago:</th>
+                            <td>R$ ${data.valor_pago}</td>
+                        </tr>
+                        <tr>
+                            <th>Status:</th>
+                            <td><span class="badge bg-${data.status_cor}">${data.status}</span></td>
+                        </tr>
+                    </table>
+                    <h6>Itens:</h6>
+                    <ul class="list-group">
+            `;
+            
+            data.itens.forEach(item => {
+                html += `
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        ${item.produto}
+                        <span class="badge bg-primary rounded-pill">
+                            ${item.quantidade}x R$ ${item.preco}
+                        </span>
+                    </li>
+                `;
+            });
+            
+            html += '</ul></div>';
+            document.getElementById('detalhesConteudo').innerHTML = html;
+        })
+        .catch(error => {
+            document.getElementById('detalhesConteudo').innerHTML = 'Erro ao carregar detalhes.';
+            console.error('Erro:', error);
+        });
+}
+
+// Atualizar a cada 30 segundos (opcional)
+// setInterval(() => {
+//     location.reload();
+// }, 30000);
+
+// Função para simular API (enquanto não implementa a rota)
+window.fetch = new Proxy(window.fetch, {
+    apply: function(target, thisArg, argumentsList) {
+        if (argumentsList[0].includes('/api/venda/')) {
+            const vendaId = argumentsList[0].split('/')[3];
+            return Promise.resolve({
+                json: () => Promise.resolve({
+                    cliente: 'Cliente Exemplo',
+                    data: new Date().toLocaleString(),
+                    valor_total: '1.234,56',
+                    valor_pago: '1.000,00',
+                    status: 'Parcial',
+                    status_cor: 'warning',
+                    itens: [
+                        { produto: 'Placa de Carro', quantidade: 2, preco: '180,00' },
+                        { produto: 'Placa de Moto', quantidade: 1, preco: '140,00' }
+                    ]
+                })
+            });
+        }
+        return target.apply(thisArg, argumentsList);
+    }
+});
+</script>
+{% endblock %}

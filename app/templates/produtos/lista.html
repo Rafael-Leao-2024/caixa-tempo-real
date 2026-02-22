@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}Produtos - Sistema de Caixa{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h2>
+                <i class="fas fa-boxes me-2"></i>Produtos
+                <small class="text-muted">Gerenciar placas e produtos</small>
+            </h2>
+            <a href="{{ url_for('produtos.novo_produto') }}" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-2"></i>Novo Produto
+            </a>
+        </div>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtrar Produtos</h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Tipo</label>
+                            <select class="form-select" name="tipo">
+                                <option value="">Todos</option>
+                                <option value="placa_carro" {% if filtros.tipo == 'placa_carro' %}selected{% endif %}>Placa de Carro</option>
+                                <option value="placa_moto" {% if filtros.tipo == 'placa_moto' %}selected{% endif %}>Placa de Moto</option>
+                                <option value="placa_caminhao" {% if filtros.tipo == 'placa_caminhao' %}selected{% endif %}>Placa de Caminhão</option>
+                                <option value="outro" {% if filtros.tipo == 'outro' %}selected{% endif %}>Outro</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Buscar</label>
+                            <input type="text" class="form-control" name="busca" 
+                                   placeholder="Nome do produto..." value="{{ filtros.busca }}">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-search me-1"></i>Filtrar
+                            </button>
+                            <a href="{{ url_for('produtos.lista_produtos') }}" class="btn btn-secondary">
+                                <i class="fas fa-undo me-1"></i>Limpar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lista de Produtos -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-list me-2"></i>Produtos Cadastrados</h5>
+                </div>
+                <div class="card-body">
+                    {% if produtos.items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Tipo</th>
+                                    <th>Descrição</th>
+                                    <th>Preço</th>
+                                    <th>Estoque</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for produto in produtos.items %}
+                                <tr>
+                                    <td>{{ loop.index + (produtos.page - 1) * produtos.per_page }}</td>
+                                    <td>
+                                        {% if produto.tipo == 'placa_carro' %}
+                                            <span class="badge bg-info">Carro</span>
+                                        {% elif produto.tipo == 'placa_moto' %}
+                                            <span class="badge bg-success">Moto</span>
+                                        {% elif produto.tipo == 'placa_caminhao' %}
+                                            <span class="badge bg-warning">Caminhão</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Outro</span>
+                                        {% endif %}
+                                    </td>
+                                    <td><strong>{{ produto.descricao }}</strong></td>
+                                    <td><strong>R$ {{ "%.2f"|format(produto.preco) }}</strong></td>
+                                    <td>
+                                        {% if produto.estoque <= 0 %}
+                                            <span class="badge bg-danger">Esgotado</span>
+                                        {% elif produto.estoque < 5 %}
+                                            <span class="badge bg-warning">{{ produto.estoque }} un.</span>
+                                        {% else %}
+                                            <span class="badge bg-success">{{ produto.estoque }} un.</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if produto.estoque > 0 %}
+                                            <span class="badge bg-success">Disponível</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Indisponível</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('produtos.detalhe_produto', id=produto.id) }}" 
+                                               class="btn btn-sm btn-info" title="Detalhes">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('produtos.editar_produto', id=produto.id) }}" 
+                                               class="btn btn-sm btn-warning" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-success" 
+                                                    onclick="usarProduto({{ produto.id }}, '{{ produto.descricao }}', {{ produto.preco }})"
+                                                    title="Usar em Venda">
+                                                <i class="fas fa-shopping-cart"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Paginação -->
+                    {% if produtos.pages > 1 %}
+                    <nav aria-label="Navegação de páginas" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if produtos.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('produtos.lista_produtos', page=produtos.prev_num, tipo=filtros.tipo, busca=filtros.busca) }}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="fas fa-chevron-left"></i></span>
+                            </li>
+                            {% endif %}
+                            
+                            {% for page_num in produtos.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                                {% if page_num %}
+                                    {% if page_num == produtos.page %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('produtos.lista_produtos', page=page_num, tipo=filtros.tipo, busca=filtros.busca) }}">
+                                            {{ page_num }}
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if produtos.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('produtos.lista_produtos', page=produtos.next_num, tipo=filtros.tipo, busca=filtros.busca) }}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="fas fa-chevron-right"></i></span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">Nenhum produto cadastrado</h5>
+                        <p>Comece cadastrando os produtos que você vende.</p>
+                        <a href="{{ url_for('produtos.novo_produto') }}" class="btn btn-primary">
+                            <i class="fas fa-plus-circle me-2"></i>Novo Produto
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function usarProduto(id, descricao, preco) {
+    // Redirecionar para nova venda com este produto pré-selecionado
+    window.location.href = "{{ url_for('vendas.nova_venda') }}?produto_id=" + id;
+}
+</script>
+{% endblock %}

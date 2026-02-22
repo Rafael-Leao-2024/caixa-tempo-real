@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Categorias de Despesa{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h2>
+                <i class="fas fa-tags me-2"></i>Categorias de Despesa
+                <small class="text-muted">Organize suas despesas</small>
+            </h2>
+            <a href="{{ url_for('despesas.nova_categoria') }}" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-2"></i>Nova Categoria
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        {% for categoria in categorias %}
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ categoria.nome }}</h5>
+                    <span class="badge bg-light text-dark">{{ categoria.despesas | count }} despesas</span>
+                </div>
+                <div class="card-body">
+                    {% if categoria.descricao %}
+                    <p class="card-text">{{ categoria.descricao }}</p>
+                    {% else %}
+                    <p class="card-text text-muted">Sem descrição</p>
+                    {% endif %}
+                    
+                    <div class="btn-group w-100">
+                        <a href="{{ url_for('despesas.editar_categoria', id=categoria.id) }}" 
+                           class="btn btn-sm btn-warning">
+                            <i class="fas fa-edit me-1"></i>Editar
+                        </a>
+                        {% if categoria.despesas | count == 0 %}
+                        <button type="button" class="btn btn-sm btn-danger" 
+                                onclick="excluirCategoria({{ categoria.id }}, '{{ categoria.nome }}')">
+                            <i class="fas fa-trash me-1"></i>Excluir
+                        </button>
+                        {% else %}
+                        <button type="button" class="btn btn-sm btn-secondary" disabled
+                                title="Não é possível excluir categoria com despesas">
+                            <i class="fas fa-trash me-1"></i>Em uso
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle me-2"></i>
+                Nenhuma categoria cadastrada. <a href="{{ url_for('despesas.nova_categoria') }}">Crie a primeira!</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Formulário oculto para exclusão -->
+<form id="form-excluir" method="POST" style="display: none;">
+    <input type="hidden" name="csrf_token" value="">
+</form>
+
+<script>
+function excluirCategoria(id, nome) {
+    if (confirm(`Tem certeza que deseja excluir a categoria "${nome}"?`)) {
+        const form = document.getElementById('form-excluir');
+        form.action = `/despesas/categorias/${id}/excluir`;
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

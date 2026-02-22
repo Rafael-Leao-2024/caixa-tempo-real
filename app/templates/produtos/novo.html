@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if produto %}
+        Editar Produto - {{ produto.descricao }}
+    {% else %}
+        Novo Produto - Sistema de Caixa
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2>
+                <i class="fas fa-{% if produto %}edit{% else %}plus{% endif %} me-2"></i>
+                {% if produto %}
+                    Editar Produto
+                    <small class="text-muted">{{ produto.descricao }}</small>
+                {% else %}
+                    Novo Produto
+                    <small class="text-muted">Cadastrar novo produto</small>
+                {% endif %}
+            </h2>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-{% if produto %}edit{% else %}plus-circle{% endif %} me-2"></i>
+                        {% if produto %}Editar{% else %}Cadastrar{% endif %} Produto
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="needs-validation" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Tipo de Placa -->
+                        <div class="mb-3">
+                            <label for="tipo" class="form-label">
+                                <i class="fas fa-tag me-2"></i>Tipo de Placa <span class="text-danger">*</span>
+                            </label>
+                            {{ form.tipo(class="form-select" + (" is-invalid" if form.tipo.errors else "")) }}
+                            {% if form.tipo.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.tipo.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Descrição -->
+                        <div class="mb-3">
+                            <label for="descricao" class="form-label">
+                                <i class="fas fa-align-left me-2"></i>Descrição <span class="text-danger">*</span>
+                            </label>
+                            {{ form.descricao(class="form-control" + (" is-invalid" if form.descricao.errors else ""),
+                                             placeholder="Ex: Placa Mercosul Padrão - Carro") }}
+                            {% if form.descricao.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.descricao.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="form-text">Nome completo do produto como aparecerá nas vendas</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <!-- Preço -->
+                            <div class="col-md-6 mb-3">
+                                <label for="preco" class="form-label">
+                                    <i class="fas fa-dollar-sign me-2"></i>Preço (R$) <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    {{ form.preco(class="form-control" + (" is-invalid" if form.preco.errors else ""),
+                                                  type="number", step="0.01", min="0.01") }}
+                                </div>
+                                {% if form.preco.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.preco.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Estoque -->
+                            <div class="col-md-6 mb-3">
+                                <label for="estoque" class="form-label">
+                                    <i class="fas fa-boxes me-2"></i>Estoque Inicial
+                                </label>
+                                {{ form.estoque(class="form-control" + (" is-invalid" if form.estoque.errors else ""),
+                                                type="number", min="0", step="1") }}
+                                {% if form.estoque.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.estoque.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <div class="form-text">Quantidade disponível em estoque</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Observações -->
+                        <div class="mb-3">
+                            <label for="observacoes" class="form-label">
+                                <i class="fas fa-comment me-2"></i>Observações
+                            </label>
+                            {{ form.observacoes(class="form-control" + (" is-invalid" if form.observacoes.errors else ""),
+                                                rows="3", placeholder="Informações adicionais sobre o produto...") }}
+                            {% if form.observacoes.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.observacoes.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Informações adicionais na edição -->
+                        {% if produto %}
+                        <div class="alert alert-info">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {% if produto.created_at %}
+                                    <small><strong>Cadastrado em:</strong> {{ produto.created_at.strftime('%d/%m/%Y') }}</small>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <small><strong>Total vendido:</strong> 
+                                        {{ produto.itens_venda|sum(attribute='quantidade') }} unidades
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <hr class="my-4">
+                        
+                        <!-- Botões -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('produtos.lista_produtos') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Voltar
+                            </a>
+                            
+                            {% if produto and produto.itens_venda | count == 0 %}
+                            <button type="button" class="btn btn-danger" onclick="confirmarExclusao()">
+                                <i class="fas fa-trash me-2"></i>Excluir
+                            </button>
+                            {% endif %}
+                            
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>
+                                {% if produto %}Salvar Alterações{% else %}Cadastrar Produto{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Dicas -->
+            <div class="card mt-3 bg-light">
+                <div class="card-body">
+                    <h6><i class="fas fa-lightbulb me-2 text-warning"></i>Dicas:</h6>
+                    <ul class="small mb-0">
+                        <li>Use descrições claras que ajudem na hora da venda</li>
+                        <li>O preço deve incluir todos os custos e margem de lucro</li>
+                        <li>O estoque é atualizado automaticamente quando uma venda é realizada</li>
+                        <li>Produtos com vendas associadas não podem ser excluídos</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if produto and produto.itens_venda | count == 0 %}
+<script>
+function confirmarExclusao() {
+    if (confirm('Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita.')) {
+        fetch("{{ url_for('produtos.excluir_produto', id=produto.id) }}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        }).then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+            }
+        });
+    }
+}
+</script>
+{% endif %}
+{% endblock %}

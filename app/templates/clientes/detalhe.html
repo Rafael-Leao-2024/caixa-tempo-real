@@ -1,0 +1,421 @@
+{% extends "base.html" %}
+
+{% block title %}Detalhes do Cliente - {{ cliente.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Cabeçalho -->
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h2>
+                <i class="fas fa-user-circle me-2"></i>{{ cliente.nome }}
+                <small class="text-muted">Detalhes do cliente</small>
+            </h2>
+            <div>
+                <a href="{{ url_for('clientes.editar_cliente', id=cliente.id) }}" class="btn btn-warning">
+                    <i class="fas fa-edit me-2"></i>Editar
+                </a>
+                <a href="{{ url_for('vendas.nova_venda') }}?cliente_id={{ cliente.id }}" class="btn btn-success">
+                    <i class="fas fa-plus-circle me-2"></i>Nova Venda
+                </a>
+                <a href="{{ url_for('clientes.lista_clientes') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards de Informações -->
+    <div class="row mb-4">
+        <!-- Informações Pessoais -->
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-address-card me-2"></i>Informações Pessoais</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th><i class="fas fa-user me-2"></i>Nome:</th>
+                            <td>{{ cliente.nome }}</td>
+                        </tr>
+                        <tr>
+                            <th><i class="fas fa-phone me-2"></i>Telefone:</th>
+                            <td>
+                                {% if cliente.telefone %}
+                                    {{ cliente.telefone }}
+                                    <a href="https://wa.me/55{{ cliente.telefone|replace('(', '')|replace(')', '')|replace('-', '')|replace(' ', '') }}" 
+                                       target="_blank" class="btn btn-sm btn-success ms-2">
+                                        <i class="fab fa-whatsapp"></i>
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">Não informado</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><i class="fas fa-envelope me-2"></i>Email:</th>
+                            <td>
+                                {% if cliente.email %}
+                                    {{ cliente.email }}
+                                    <a href="mailto:{{ cliente.email }}" class="btn btn-sm btn-info ms-2">
+                                        <i class="fas fa-envelope"></i>
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">Não informado</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><i class="fas fa-calendar me-2"></i>Cliente desde:</th>
+                            <td>{{ cliente.created_at.strftime('%d/%m/%Y') }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Informações Financeiras -->
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Situação Financeira</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th><i class="fas fa-credit-card me-2"></i>Tipo:</th>
+                            <td>
+                                {% if cliente.tipo_pagamento == 'vista' %}
+                                    <span class="badge bg-success">À Vista</span>
+                                {% else %}
+                                    <span class="badge bg-warning">A Prazo</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% if cliente.tipo_pagamento == 'prazo' %}
+                        <tr>
+                            <th><i class="fas fa-chart-line me-2"></i>Limite de Crédito:</th>
+                            <td><strong>R$ {{ "%.2f"|format(cliente.limite_credito) }}</strong></td>
+                        </tr>
+                        <tr>
+                            <th><i class="fas fa-exclamation-triangle me-2"></i>Saldo Devedor:</th>
+                            <td>
+                                <strong class="{% if cliente.saldo_devedor > 0 %}text-danger{% else %}text-success{% endif %}">
+                                    R$ {{ "%.2f"|format(cliente.saldo_devedor) }}
+                                </strong>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><i class="fas fa-check-circle me-2"></i>Disponível:</th>
+                            <td>
+                                <strong class="{% if (cliente.limite_credito - cliente.saldo_devedor) > 0 %}text-success{% else %}text-danger{% endif %}">
+                                    R$ {{ "%.2f"|format(cliente.limite_credito - cliente.saldo_devedor) }}
+                                </strong>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><i class="fas fa-percent me-2"></i>Utilização:</th>
+                            <td>
+                                {% if cliente.limite_credito > 0 %}
+                                    {% set utilizacao = (cliente.saldo_devedor / cliente.limite_credito * 100) %}
+                                    <div class="progress">
+                                        <div class="progress-bar {% if utilizacao > 80 %}bg-danger{% elif utilizacao > 50 %}bg-warning{% else %}bg-success{% endif %}" 
+                                             role="progressbar" style="width: {{ utilizacao }}%">
+                                            {{ "%.1f"|format(utilizacao) }}%
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted">Sem limite definido</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estatísticas de Compras -->
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Estatísticas de Compras</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th><i class="fas fa-shopping-bag me-2"></i>Total de Compras:</th>
+                            <td><strong>{{ vendas|length }}</strong> venda(s)</td>
+                        </tr>
+                        <tr>
+                            <th><i class="fas fa-money-bill-wave me-2"></i>Valor Total:</th>
+                            <td><strong>R$ {{ "%.2f"|format(total_compras) }}</strong></td>
+                        </tr>
+                        <tr>
+                            <th><i class="fas fa-check-circle me-2"></i>Total Pago:</th>
+                            <td><strong class="text-success">R$ {{ "%.2f"|format(total_pago) }}</strong></td>
+                        </tr>
+                        <tr>
+                            <th><i class="fas fa-clock me-2"></i>Última Compra:</th>
+                            <td>
+                                {% if vendas %}
+                                    {{ vendas[0].data_venda.strftime('%d/%m/%Y') }}
+                                {% else %}
+                                    <span class="text-muted">Nenhuma compra</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Observações -->
+    {% if cliente.observacoes %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-comment me-2"></i>Observações</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ cliente.observacoes }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Histórico de Vendas -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Histórico de Vendas</h5>
+                    <span class="badge bg-light text-dark">Total: {{ vendas|length }} vendas</span>
+                </div>
+                <div class="card-body">
+                    {% if vendas %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Vendedor</th>
+                                    <th>Caixa</th>
+                                    <th>Valor Total</th>
+                                    <th>Valor Pago</th>
+                                    <th>Status</th>
+                                    <th>Tipo</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for venda in vendas %}
+                                <tr class="{% if venda.status == 'pendente' %}table-warning{% elif venda.status == 'pago' %}table-success{% endif %}">
+                                    <td>{{ venda.data_venda.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>{{ venda.vendedor.nome if venda.vendedor else 'N/A' }}</td>
+                                    <td>{{ venda.caixa_local.nome if venda.caixa_local else 'N/A' }}</td>
+                                    <td><strong>R$ {{ "%.2f"|format(venda.valor_total) }}</strong></td>
+                                    <td>R$ {{ "%.2f"|format(venda.valor_pago) }}</td>
+                                    <td>
+                                        {% if venda.status == 'pago' %}
+                                            <span class="badge bg-success">Pago</span>
+                                        {% elif venda.status == 'pendente' %}
+                                            <span class="badge bg-warning">Pendente</span>
+                                        {% else %}
+                                            <span class="badge bg-info">Parcial</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if venda.tipo_pagamento == 'vista' %}
+                                            <span class="badge bg-primary">À Vista</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">A Prazo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('vendas.detalhe_venda', id=venda.id) }}" 
+                                               class="btn btn-sm btn-info" title="Detalhes">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if venda.status != 'pago' %}
+                                            <a href="{{ url_for('vendas.registrar_pagamento', id=venda.id) }}" 
+                                               class="btn btn-sm btn-success" title="Registrar Pagamento">
+                                                <i class="fas fa-money-bill"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-primary">
+                                <tr>
+                                    <th colspan="3" class="text-end">TOTAIS:</th>
+                                    <th>R$ {{ "%.2f"|format(total_compras) }}</th>
+                                    <th>R$ {{ "%.2f"|format(total_pago) }}</th>
+                                    <th colspan="3"></th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Nenhuma venda registrada para este cliente</h5>
+                        <a href="{{ url_for('vendas.nova_venda') }}?cliente_id={{ cliente.id }}" class="btn btn-primary mt-2">
+                            <i class="fas fa-plus-circle me-2"></i>Registrar Primeira Venda
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Extrato de Pagamentos (se houver vendas a prazo) -->
+    {% if cliente.tipo_pagamento == 'prazo' and vendas|selectattr('pagamentos')|list %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-money-check me-2"></i>Histórico de Pagamentos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Venda</th>
+                                    <th>Valor</th>
+                                    <th>Forma</th>
+                                    <th>Recebedor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for venda in vendas %}
+                                    {% for pagamento in venda.pagamentos %}
+                                    <tr>
+                                        <td>{{ pagamento.data_pagamento.strftime('%d/%m/%Y %H:%M') }}</td>
+                                        <td>
+                                            <a href="{{ url_for('vendas.detalhe_venda', id=venda.id) }}">
+                                                Venda #{{ venda.id }}
+                                            </a>
+                                        </td>
+                                        <td><strong>R$ {{ "%.2f"|format(pagamento.valor) }}</strong></td>
+                                        <td>
+                                            {% if pagamento.forma_pagamento == 'dinheiro' %}
+                                                <span class="badge bg-success">Dinheiro</span>
+                                            {% elif pagamento.forma_pagamento == 'cartao' %}
+                                                <span class="badge bg-primary">Cartão</span>
+                                            {% else %}
+                                                <span class="badge bg-info">PIX</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ pagamento.recebedor.nome if pagamento.recebedor else 'N/A' }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Botões de ação rápida (fixo no canto inferior direito) -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 5">
+        <div class="btn-group-vertical">
+            {% if cliente.telefone %}
+            <a href="https://wa.me/55{{ cliente.telefone|replace('(', '')|replace(')', '')|replace('-', '')|replace(' ', '') }}" 
+               target="_blank" class="btn btn-success mb-2" title="Enviar WhatsApp">
+                <i class="fab fa-whatsapp fa-lg"></i>
+            </a>
+            {% endif %}
+            {% if cliente.email %}
+            <a href="mailto:{{ cliente.email }}" class="btn btn-info mb-2 text-white" title="Enviar E-mail">
+                <i class="fas fa-envelope fa-lg"></i>
+            </a>
+            {% endif %}
+            <a href="{{ url_for('vendas.nova_venda') }}?cliente_id={{ cliente.id }}" 
+               class="btn btn-primary mb-2" title="Nova Venda">
+                <i class="fas fa-plus-circle fa-lg"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Função para formatar telefone enquanto digita (se precisar editar rápido)
+function formatarTelefone(telefone) {
+    let value = telefone.replace(/\D/g, '');
+    if (value.length <= 11) {
+        if (value.length > 10) {
+            value = value.replace(/^(\d{2})(\d{5})(\d{4}).*/, '($1) $2-$3');
+        } else if (value.length > 5) {
+            value = value.replace(/^(\d{2})(\d{4})(\d{0,4}).*/, '($1) $2-$3');
+        } else if (value.length > 2) {
+            value = value.replace(/^(\d{2})(\d{0,5})/, '($1) $2');
+        } else {
+            value = value.replace(/^(\d*)/, '($1');
+        }
+    }
+    return value;
+}
+
+// Gráfico de histórico de compras (opcional)
+document.addEventListener('DOMContentLoaded', function() {
+    // Se quiser adicionar um gráfico de compras por mês
+    const vendasPorMes = {};
+    {% for venda in vendas %}
+        const mes = '{{ venda.data_venda.strftime("%m/%Y") }}';
+        if (!vendasPorMes[mes]) {
+            vendasPorMes[mes] = 0;
+        }
+        vendasPorMes[mes] += {{ venda.valor_total }};
+    {% endfor %}
+    
+    // Ordenar meses
+    const meses = Object.keys(vendasPorMes).sort((a, b) => {
+        const [mesA, anoA] = a.split('/');
+        const [mesB, anoB] = b.split('/');
+        return new Date(anoA, mesA-1) - new Date(anoB, mesB-1);
+    });
+    
+    if (meses.length > 1) {
+        // Se tiver mais de um mês com vendas, pode criar um gráfico
+        console.log('Dados para gráfico:', meses, Object.values(vendasPorMes));
+    }
+});
+
+// Confirmar exclusão (se implementar rota de exclusão)
+function confirmarExclusao() {
+    if (confirm('Tem certeza que deseja excluir este cliente? Todas as vendas associadas também serão excluídas.')) {
+        window.location.href = "{{ url_for('clientes.editar_cliente', id=cliente.id) }}";
+    }
+}
+
+// Atualizar informações em tempo real (opcional)
+function atualizarDados() {
+    fetch(`/api/cliente/{{ cliente.id }}/info`)
+        .then(response => response.json())
+        .then(data => {
+            // Atualizar saldo devedor se mudou
+            console.log('Dados atualizados:', data);
+        })
+        .catch(error => console.error('Erro:', error));
+}
+
+// Atualizar a cada 30 segundos
+setInterval(atualizarDados, 10000);
+</script>
+{% endblock %}

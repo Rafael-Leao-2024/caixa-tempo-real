@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Nova Categoria de Despesa{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2>
+                <i class="fas fa-plus-circle me-2"></i>Nova Categoria
+                <small class="text-muted">Criar categoria de despesa</small>
+            </h2>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-tag me-2"></i>Dados da Categoria</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Nome -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-heading me-2"></i>Nome da Categoria <span class="text-danger">*</span>
+                            </label>
+                            {{ form.nome(class="form-control" + (" is-invalid" if form.nome.errors else ""),
+                                         placeholder="Ex: Contas de Consumo") }}
+                            {% if form.nome.errors %}
+                                <div class="invalid-feedback">{{ form.nome.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Descrição -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-align-left me-2"></i>Descrição
+                            </label>
+                            {{ form.descricao(class="form-control" + (" is-invalid" if form.descricao.errors else ""),
+                                              placeholder="Descrição opcional da categoria",
+                                              rows="3") }}
+                            {% if form.descricao.errors %}
+                                <div class="invalid-feedback">{{ form.descricao.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <hr>
+                        
+                        <!-- Botões -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('despesas.lista_categorias') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Voltar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Criar Categoria
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Sugestões -->
+            <div class="card mt-3 bg-light">
+                <div class="card-body">
+                    <h6><i class="fas fa-lightbulb text-warning me-2"></i>Sugestões de Categorias:</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="small">
+                                <li>Contas (água, luz, internet)</li>
+                                <li>Aluguel</li>
+                                <li>Matéria-prima</li>
+                                <li>Marketing</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="small">
+                                <li>Salários</li>
+                                <li>Manutenção</li>
+                                <li>Impostos</li>
+                                <li>Outros</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

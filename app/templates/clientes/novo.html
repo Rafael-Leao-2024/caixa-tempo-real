@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if cliente %}
+        Editar Cliente - {{ cliente.nome }}
+    {% else %}
+        Novo Cliente - Sistema de Caixa
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2>
+                <i class="fas fa-user-{% if cliente %}edit{% else %}plus{% endif %} me-2"></i>
+                {% if cliente %}
+                    Editar Cliente
+                    <small class="text-muted">{{ cliente.nome }}</small>
+                {% else %}
+                    Novo Cliente
+                    <small class="text-muted">Cadastrar novo cliente</small>
+                {% endif %}
+            </h2>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-{% if cliente %}edit{% else %}plus-circle{% endif %} me-2"></i>
+                        {% if cliente %}Editar{% else %}Cadastrar{% endif %} Cliente
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="needs-validation" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Nome (obrigatório) -->
+                        <div class="mb-3">
+                            <label for="nome" class="form-label">
+                                <i class="fas fa-user me-2"></i>Nome Completo <span class="text-danger">*</span>
+                            </label>
+                            {{ form.nome(class="form-control" + (" is-invalid" if form.nome.errors else ""), 
+                                         placeholder="Digite o nome completo do cliente") }}
+                            {% if form.nome.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.nome.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="form-text">Campo obrigatório</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <!-- Telefone -->
+                            <div class="col-md-6 mb-3">
+                                <label for="telefone" class="form-label">
+                                    <i class="fas fa-phone me-2"></i>Telefone
+                                </label>
+                                {{ form.telefone(class="form-control" + (" is-invalid" if form.telefone.errors else ""),
+                                                 placeholder="(00) 00000-0000", id="telefone") }}
+                                {% if form.telefone.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.telefone.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <div class="form-text">Ex: (11) 98765-4321</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Email -->
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">
+                                    <i class="fas fa-envelope me-2"></i>E-mail
+                                </label>
+                                {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""),
+                                               placeholder="cliente@exemplo.com", type="email") }}
+                                {% if form.email.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.email.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <!-- Tipo de Pagamento -->
+                            <div class="col-md-6 mb-3">
+                                <label for="tipo_pagamento" class="form-label">
+                                    <i class="fas fa-credit-card me-2"></i>Tipo de Pagamento <span class="text-danger">*</span>
+                                </label>
+                                {{ form.tipo_pagamento(class="form-select" + (" is-invalid" if form.tipo_pagamento.errors else "")) }}
+                                {% if form.tipo_pagamento.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.tipo_pagamento.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Limite de Crédito (para clientes a prazo) -->
+                            <!-- Limite de Crédito (para clientes a prazo) -->
+                            <div class="col-md-6 mb-3" id="campo_limite">
+                                <label for="limite_credito" class="form-label">
+                                    <i class="fas fa-chart-line me-2"></i>Limite de Crédito
+                                    <small class="text-muted">(padrão: R$ 10.000,00)</small>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    {{ form.limite_credito(class="form-control" + (" is-invalid" if form.limite_credito.errors else "2"),
+                                                            value="10000.00", step="0.01", min="0", type="number") }}
+                                </div>
+                                {% if form.limite_credito.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.limite_credito.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <div class="form-text">Limite padrão: R$ 10.000,00. Altere se necessário.</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Observações -->
+                        <div class="mb-3">
+                            <label for="observacoes" class="form-label">
+                                <i class="fas fa-comment me-2"></i>Observações
+                            </label>
+                            {{ form.observacoes(class="form-control" + (" is-invalid" if form.observacoes.errors else ""),
+                                                 rows="3", placeholder="Informações adicionais sobre o cliente...") }}
+                            {% if form.observacoes.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.observacoes.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Informações adicionais (exibidas apenas na edição) -->
+                        {% if cliente %}
+                        <div class="alert alert-info">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <small><strong>Cadastro:</strong> {{ cliente.created_at.strftime('%d/%m/%Y') }}</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <small><strong>Total Compras:</strong> R$ {{ "%.2f"|format(cliente.vendas|sum(attribute='valor_total')) }}</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <small><strong>Saldo Atual:</strong> 
+                                        <span class="{% if cliente.saldo_devedor > 0 %}text-danger{% else %}text-success{% endif %}">
+                                            R$ {{ "%.2f"|format(cliente.saldo_devedor) }}
+                                        </span>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <hr class="my-4">
+                        
+                        <!-- Botões de ação -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('clientes.lista_clientes') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Voltar
+                            </a>
+                            
+                            {% if cliente %}
+                                <a href="{{ url_for('clientes.detalhe_cliente', id=cliente.id) }}" 
+                                   class="btn btn-info text-white">
+                                    <i class="fas fa-eye me-2"></i>Ver Detalhes
+                                </a>
+                            {% endif %}
+                            
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>
+                                {% if cliente %}Salvar Alterações{% else %}Cadastrar Cliente{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Dicas e informações adicionais -->
+            <div class="card mt-3 bg-light">
+                <div class="card-body">
+                    <h6><i class="fas fa-info-circle me-2"></i>Informações importantes:</h6>
+                    <ul class="small mb-0">
+                        <li>Os campos marcados com <span class="text-danger">*</span> são obrigatórios</li>
+                        <li>Clientes do tipo "A Prazo" podem ter limite de crédito definido</li>
+                        <li>O telefone será usado para contato e notificações</li>
+                        <li>As observações são internas e não aparecem para o cliente</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Máscara para telefone
+document.getElementById('telefone').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 11) {
+        if (value.length > 10) {
+            value = value.replace(/^(\d{2})(\d{5})(\d{4}).*/, '($1) $2-$3');
+        } else if (value.length > 5) {
+            value = value.replace(/^(\d{2})(\d{4})(\d{0,4}).*/, '($1) $2-$3');
+        } else if (value.length > 2) {
+            value = value.replace(/^(\d{2})(\d{0,5})/, '($1) $2');
+        } else {
+            value = value.replace(/^(\d*)/, '($1');
+        }
+        e.target.value = value;
+    }
+});
+
+// Controle do campo limite de crédito baseado no tipo de pagamento
+function toggleLimiteCredito() {
+    const tipoPagamento = document.querySelector('select[name="tipo_pagamento"]').value;
+    const campoLimite = document.getElementById('campo_limite');
+    const inputLimite = document.querySelector('input[name="limite_credito"]');
+    
+    if (tipoPagamento === 'prazo') {
+        campoLimite.style.display = 'block';
+        inputLimite.required = false; // Não obrigatório, mas visível
+    } else {
+        campoLimite.style.display = 'none';
+        inputLimite.value = 0; // Zera o limite para clientes à vista
+    }
+}
+
+// Executar quando a página carregar
+document.addEventListener('DOMContentLoaded', function() {
+    toggleLimiteCredito();
+    
+    // Adicionar evento de mudança ao select
+    document.querySelector('select[name="tipo_pagamento"]').addEventListener('change', toggleLimiteCredito);
+});
+
+// Validação do formulário antes de enviar
+document.querySelector('form').addEventListener('submit', function(e) {
+    const tipoPagamento = document.querySelector('select[name="tipo_pagamento"]').value;
+    const limite = parseFloat(document.querySelector('input[name="limite_credito"]').value) || 0;
+    
+    if (tipoPagamento === 'prazo' && limite <= 0) {
+        e.preventDefault();
+        alert('Para clientes a prazo, defina um limite de crédito válido (maior que zero).');
+    }
+});
+
+// Prevenir caracteres não numéricos no limite
+document.querySelector('input[name="limite_credito"]').addEventListener('keypress', function(e) {
+    const charCode = e.which ? e.which : e.keyCode;
+    if (charCode > 31 && (charCode < 48 || charCode > 57) && charCode !== 46) {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}
