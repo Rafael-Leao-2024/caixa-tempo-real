@@ -3,7 +3,7 @@
 
 import os
 from dotenv import load_dotenv
-from app import create_app
+from caixa import create_app
 
 # Carregar variáveis de ambiente do arquivo .env
 load_dotenv()

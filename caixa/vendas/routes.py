@@ -1,10 +1,10 @@
 from flask import render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
-from app import db
-from app.vendas import bp
-from app.vendas.forms import VendaForm, PagamentoForm
-from app.models import Cliente, Produto, Venda, ItemVenda, Pagamento, FluxoCaixa, Caixa
-from app.decoradores import caixa_required
+from caixa import db
+from caixa.vendas import bp
+from caixa.vendas.forms import VendaForm, PagamentoForm
+from caixa.models import Cliente, Produto, Venda, ItemVenda, Pagamento, FluxoCaixa, Caixa
+from caixa.decoradores import caixa_required
 from datetime import datetime, date
 
 # ========== FUNÇÕES AUXILIARES DO FLUXO DE CAIXA ==========

@@ -1,9 +1,9 @@
 from flask import render_template, redirect, url_for, flash, request, session
 from flask_login import login_user, logout_user, login_required, current_user
-from app import db
-from app.auth import bp
-from app.auth.forms import LoginForm, RegisterCaixaForm
-from app.models import User, Caixa
+from caixa import db
+from caixa.auth import bp
+from caixa.auth.forms import LoginForm, RegisterCaixaForm
+from caixa.models import User, Caixa
 import os
 import requests
 from google.oauth2 import id_token

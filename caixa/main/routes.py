@@ -1,8 +1,8 @@
 from flask import render_template
 from flask_login import login_required, current_user
-from app.main import bp
-from app.models import Venda, Cliente, Caixa
-from app.extensoes import db
+from caixa.main import bp
+from caixa.models import Venda, Cliente, Caixa
+from caixa.extensoes import db
 from datetime import datetime, date
 
 @bp.route('/')

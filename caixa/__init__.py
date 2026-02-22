@@ -1,6 +1,6 @@
 from flask import Flask
-from config import Config
-from app.extensoes import db, migrate, login_manager
+from caixa.config import Config
+from caixa.extensoes import db, migrate, login_manager
 
 
 def create_app(config_class=Config):
@@ -26,28 +26,28 @@ def create_app(config_class=Config):
     login_manager.login_message_category = 'info'
 
     # Registrar blueprints
-    from app.auth import bp as auth_bp
+    from caixa.auth import bp as auth_bp
     app.register_blueprint(auth_bp, url_prefix='/auth')
 
-    from app.main import bp as main_bp
+    from caixa.main import bp as main_bp
     app.register_blueprint(main_bp)
 
-    from app.clientes import bp as clientes_bp
+    from caixa.clientes import bp as clientes_bp
     app.register_blueprint(clientes_bp, url_prefix='/clientes')
 
-    from app.vendas import bp as vendas_bp
+    from caixa.vendas import bp as vendas_bp
     app.register_blueprint(vendas_bp, url_prefix='/vendas')
 
-    from app.relatorios import bp as relatorios_bp
+    from caixa.relatorios import bp as relatorios_bp
     app.register_blueprint(relatorios_bp, url_prefix='/relatorios')
 
     # Importar e registrar o blueprint de despesas
 
     # Depois dos outros imports de blueprints
-    from app.produtos import bp as produtos_bp
+    from caixa.produtos import bp as produtos_bp
     app.register_blueprint(produtos_bp)
 
-    from app.despesas import bp as despesas_bp
+    from caixa.despesas import bp as despesas_bp
     app.register_blueprint(despesas_bp)
     
     return app

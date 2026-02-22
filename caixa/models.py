@@ -1,6 +1,6 @@
 from datetime import datetime
 from flask_login import UserMixin
-from app.extensoes import db
+from caixa.extensoes import db
 
 
 class User(UserMixin, db.Model):

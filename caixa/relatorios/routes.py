@@ -1,9 +1,9 @@
 from flask import render_template, request, jsonify
 from flask_login import login_required, current_user
-from app import db
-from app.relatorios import bp
-from app.models import Venda, Pagamento, Cliente, Caixa, FluxoCaixa
-from app.decoradores import owner_required, caixa_required
+from caixa import db
+from caixa.relatorios import bp
+from caixa.models import Venda, Pagamento, Cliente, Caixa, FluxoCaixa
+from caixa.decoradores import owner_required, caixa_required
 from datetime import datetime, date, timedelta
 
 @bp.route('/diario')

@@ -1,10 +1,10 @@
 from flask import render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required
-from app import db
-from app.clientes import bp
-from app.clientes.forms import ClienteForm
-from app.models import Cliente, Venda
-from app.decoradores import caixa_required
+from caixa import db
+from caixa.clientes import bp
+from caixa.clientes.forms import ClienteForm
+from caixa.models import Cliente, Venda
+from caixa.decoradores import caixa_required
 
 @bp.route('/')
 @login_required

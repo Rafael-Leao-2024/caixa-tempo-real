@@ -1,9 +1,9 @@
 from flask import render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
-from app import db
-from app.despesas import bp
-from app.despesas.forms import DespesaForm, CategoriaDespesaForm
-from app.models import Despesa, CategoriaDespesa, Caixa
+from caixa import db
+from caixa.despesas import bp
+from caixa.despesas.forms import DespesaForm, CategoriaDespesaForm
+from caixa.models import Despesa, CategoriaDespesa, Caixa
 from datetime import datetime, date
 from sqlalchemy import func
 
@@ -242,7 +242,7 @@ def resumo_diario():
 @login_required
 def faturamento_diario():
     """Relatório de faturamento do dia (vendas - despesas)"""
-    from app.models import Venda
+    from caixa.models import Venda
     
     hoje = date.today()
     
