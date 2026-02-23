@@ -30,7 +30,7 @@ class User(UserMixin, db.Model):
     pagamentos_recebidos = db.relationship('Pagamento', backref='recebedor', foreign_keys='Pagamento.recebedor_id', lazy=True)
     
     @staticmethod
-    def get_or_create(id, nome, email, profile_pic):
+    def get_or_create(id, nome, email, profile_pic, caixa=None):
         user = User.query.get(id[-4:])
         if not user:
             user = User(
@@ -38,7 +38,7 @@ class User(UserMixin, db.Model):
                 email=email,
                 nome=nome,
                 is_owner=True,
-                caixa_id=1234,
+                caixa_id=caixa.id,
                 profile_pic=profile_pic,
                 password_hash='1234'
             )

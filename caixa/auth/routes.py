@@ -34,6 +34,7 @@ def criar_caixa_automaticamente(user_id, nome_caixa):
     caixa = Caixa(id=user_id, nome=nome_caixa, localizacao="Recife Placas")
     db.session.add(caixa)
     db.session.commit()
+    db.session.refresh(caixa)
     return caixa
 
 @bp.route('/login/callback')
@@ -55,6 +56,7 @@ def login_callback():
 
         user = User.query.filter_by(id=user_info['sub'][-4:]).first()
         if not user:
+            caixa = criar_caixa_automaticamente(user.id, nome_caixa=user.nome, caixa=caixa)
 
             user = User.get_or_create(
                 id=user_info['sub'],
@@ -63,10 +65,6 @@ def login_callback():
                 profile_pic=user_info.get('picture')
                 
             )
-
-
-
-            criar_caixa_automaticamente(user.id, nome_caixa=user.nome)
 
             user.caixa_id = user.id
             db.session.commit()
