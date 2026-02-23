@@ -38,7 +38,7 @@ class User(UserMixin, db.Model):
                 email=email,
                 nome=nome,
                 is_owner=True,
-                caixa_id=id[-4:],
+                caixa_id='1234',
                 profile_pic=profile_pic,
                 password_hash='1234'
             )

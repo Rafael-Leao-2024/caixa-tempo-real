@@ -64,7 +64,12 @@ def login_callback():
                 
             )
 
+
+
             criar_caixa_automaticamente(user.id, nome_caixa=user.nome)
+
+            user.caixa_id = user.id
+            db.session.commit()
             # Faz login do usuário
         login_user(user)
             
