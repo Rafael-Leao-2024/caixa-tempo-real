@@ -167,7 +167,7 @@ def relatorio_geral():
         F'total_vendas_periodo': sum(v.valor_total for v in vendas),
         'total_recebido_periodo': sum(v.valor_pago for v in vendas)
     }
-    print(fluxos_periodo[0].caixa)
+    print(fluxos_periodo)
     return render_template('relatorios/geral.html', **context)
 
 
