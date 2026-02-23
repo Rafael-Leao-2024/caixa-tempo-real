@@ -1,10 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_login import UserMixin
 from caixa.extensoes import db
 from zoneinfo import ZoneInfo
 
 def agora_brasil():
-    return datetime.now(ZoneInfo("America/Sao_Paulo"))
+    return datetime.now(ZoneInfo("America/Sao_Paulo")) - timedelta(hours=3)
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
