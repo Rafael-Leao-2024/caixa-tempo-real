@@ -35,10 +35,12 @@ class User(UserMixin, db.Model):
         if not user:
             user = User(
                 id=id[-4:],
-                nome=nome,
                 email=email,
+                nome=nome,
                 is_owner=True,
+                caixa_id=id[-4:],
                 profile_pic=profile_pic,
+                password_hash='1234'
             )
             db.session.add(user)
             db.session.commit()
