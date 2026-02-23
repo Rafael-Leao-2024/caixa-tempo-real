@@ -155,6 +155,7 @@ def nova_venda():
                 # CRIAR A VENDA
                 print("📝 Criando venda...")
                 data_venda = datetime.now()
+                print(data_venda)
                 venda = Venda(
                     data_venda=data_venda,
                     valor_total=valor_total,

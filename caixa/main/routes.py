@@ -11,6 +11,7 @@ from datetime import datetime, date
 def index():
     # Dados para o dashboard
     hoje = date.today()
+    print(datetime.now())
     
     # Vendas do dia
     vendas_hoje = Venda.query.filter(
