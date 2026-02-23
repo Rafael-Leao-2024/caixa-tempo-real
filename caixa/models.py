@@ -34,11 +34,11 @@ class User(UserMixin, db.Model):
         user = User.query.get(id[-4:])
         if not user:
             user = User(
-                id=id[-4:],
+                id=int(id[-4:]),
                 email=email,
                 nome=nome,
                 is_owner=True,
-                caixa_id=caixa.id,
+                caixa_id=int(caixa.id),
                 profile_pic=profile_pic,
                 password_hash='1234'
             )

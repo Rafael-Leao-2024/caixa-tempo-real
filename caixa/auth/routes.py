@@ -31,7 +31,7 @@ def login():
 
 def criar_caixa_automaticamente(user_id, nome_caixa):
     """Função para criar caixa automaticamente (pode ser chamada por script ou admin)"""
-    caixa = Caixa(id=user_id, nome=nome_caixa, localizacao="Recife Placas")
+    caixa = Caixa(id=int(user_id), nome=nome_caixa, localizacao="Loja Principal")
     db.session.add(caixa)
     db.session.commit()
     db.session.refresh(caixa)
@@ -56,18 +56,20 @@ def login_callback():
 
         user = User.query.filter_by(id=user_info['sub'][-4:]).first()
         if not user:
-            caixa = criar_caixa_automaticamente(user.id, nome_caixa=user.nome, caixa=caixa)
+
+            caixa = Caixa.query.filter(Caixa.id == int(user_info['sub'][-4:])).first()
+            if not caixa:
+                caixa = criar_caixa_automaticamente(user_info['sub'][-4:], nome_caixa=user_info['name'])
 
             user = User.get_or_create(
                 id=user_info['sub'],
                 nome=user_info['name'],
                 email=user_info['email'],
-                profile_pic=user_info.get('picture')
+                profile_pic=user_info.get('picture'),
+                caixa=caixa
                 
             )
 
-            user.caixa_id = user.id
-            db.session.commit()
             # Faz login do usuário
         login_user(user)
             
