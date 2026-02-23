@@ -200,7 +200,7 @@ def excluir_categoria(id):
     categoria = CategoriaDespesa.query.get_or_404(id)
     
     # Verificar se há despesas nesta categoria
-    if categoria.despesas.count() > 0:
+    if len(categoria.despesas) > 0:
         flash('❌ Não é possível excluir categoria com despesas vinculadas!', 'danger')
         return redirect(url_for('despesas.lista_categorias'))
     
