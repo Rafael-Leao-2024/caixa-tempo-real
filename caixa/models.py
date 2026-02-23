@@ -1,7 +1,10 @@
 from datetime import datetime
 from flask_login import UserMixin
 from caixa.extensoes import db
+from zoneinfo import ZoneInfo
 
+def agora_brasil():
+    return datetime.now(ZoneInfo("America/Sao_Paulo"))
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
@@ -11,7 +14,7 @@ class User(UserMixin, db.Model):
     nome = db.Column(db.String(100), nullable=False)
     is_owner = db.Column(db.Boolean, default=True)
     caixa_id = db.Column(db.Integer, db.ForeignKey('caixas.id'), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.now)
+    created_at = db.Column(db.DateTime, default=agora_brasil)
     
     # Campos para Google OAuth
     profile_pic = db.Column(db.String(500), nullable=True, default='https://www.gravatar.com/avatar/?d=mp&s=200')
@@ -48,7 +51,7 @@ class Caixa(db.Model):
     nome = db.Column(db.String(100), nullable=False)
     localizacao = db.Column(db.String(200), nullable=False, default='Loja Principal')
     is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.now)
+    created_at = db.Column(db.DateTime, default=agora_brasil)
     
     # CORREÇÃO 2: Remover owner_id para quebrar o ciclo
     # Em vez disso, o relacionamento é feito via User.caixa_id
@@ -72,7 +75,7 @@ class Cliente(db.Model):
     limite_credito = db.Column(db.Float, default=100000.00)
     saldo_devedor = db.Column(db.Float, default=0)
     observacoes = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.now)
+    created_at = db.Column(db.DateTime, default=agora_brasil)
     
     vendas = db.relationship('Venda', backref='cliente', foreign_keys='Venda.cliente_id', lazy=True)
 
@@ -84,7 +87,7 @@ class Produto(db.Model):
     descricao = db.Column(db.String(200))
     preco = db.Column(db.Float, nullable=False)
     estoque = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.now)
+    created_at = db.Column(db.DateTime, default=agora_brasil)
     
     itens_venda = db.relationship('ItemVenda', backref='produto', lazy=True)
 
@@ -92,7 +95,7 @@ class Venda(db.Model):
     __tablename__ = 'vendas'
     
     id = db.Column(db.Integer, primary_key=True)
-    data_venda = db.Column(db.DateTime, default=datetime.now)
+    data_venda = db.Column(db.DateTime, default=agora_brasil)
     valor_total = db.Column(db.Float, nullable=False)
     valor_pago = db.Column(db.Float, default=0)
     status = db.Column(db.String(20), default='pendente')
@@ -124,7 +127,7 @@ class Pagamento(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     venda_id = db.Column(db.Integer, db.ForeignKey('vendas.id'), nullable=False)
     valor = db.Column(db.Float, nullable=False)
-    data_pagamento = db.Column(db.DateTime, default=datetime.now)
+    data_pagamento = db.Column(db.DateTime, default=agora_brasil)
     forma_pagamento = db.Column(db.String(50))
     recebedor_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     observacoes = db.Column(db.Text)
@@ -151,7 +154,7 @@ class CategoriaDespesa(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(50), nullable=False, unique=True)
     descricao = db.Column(db.String(200))
-    created_at = db.Column(db.DateTime, default=datetime.now)
+    created_at = db.Column(db.DateTime, default=agora_brasil)
     
     # Relacionamentos
     despesas = db.relationship('Despesa', backref='categoria', lazy=True)
@@ -163,8 +166,8 @@ class Despesa(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     descricao = db.Column(db.String(200), nullable=False)
     valor = db.Column(db.Float, nullable=False)
-    data_despesa = db.Column(db.Date, nullable=False, default=datetime.now().date)
-    data_registro = db.Column(db.DateTime, default=datetime.now)
+    data_despesa = db.Column(db.Date, nullable=False, default=agora_brasil)
+    data_registro = db.Column(db.DateTime, default=agora_brasil)
     forma_pagamento = db.Column(db.String(50))  # 'dinheiro', 'cartao', 'pix', 'boleto'
     observacoes = db.Column(db.Text)
     

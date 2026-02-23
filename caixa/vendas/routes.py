@@ -6,6 +6,7 @@ from caixa.vendas.forms import VendaForm, PagamentoForm
 from caixa.models import Cliente, Produto, Venda, ItemVenda, Pagamento, FluxoCaixa, Caixa
 from caixa.decoradores import caixa_required
 from datetime import datetime, date
+from caixa.models import agora_brasil
 
 # ========== FUNÇÕES AUXILIARES DO FLUXO DE CAIXA ==========
 
@@ -154,7 +155,7 @@ def nova_venda():
                 
                 # CRIAR A VENDA
                 print("📝 Criando venda...")
-                data_venda = datetime.now()
+                data_venda = agora_brasil()
                 print(data_venda)
                 venda = Venda(
                     data_venda=data_venda,
@@ -266,7 +267,8 @@ def registrar_pagamento(id):
             return render_template('vendas/pagamento.html', form=form, venda=venda)
         
         # Registrar pagamento
-        data_pagamento = datetime.now()
+        data_pagamento = agora_brasil()
+
         pagamento = Pagamento(
             venda_id=venda.id,
             valor=form.valor.data,
