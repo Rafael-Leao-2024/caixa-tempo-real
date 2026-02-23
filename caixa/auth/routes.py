@@ -31,7 +31,7 @@ def login():
 
 def criar_caixa_automaticamente(user_id, nome_caixa):
     """Função para criar caixa automaticamente (pode ser chamada por script ou admin)"""
-    caixa = Caixa(id=user_id, nome=nome_caixa)
+    caixa = Caixa(id=user_id, nome=nome_caixa, localizacao="Recife Placas")
     db.session.add(caixa)
     db.session.commit()
     return caixa

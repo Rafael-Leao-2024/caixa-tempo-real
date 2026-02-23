@@ -11,7 +11,7 @@ class User(UserMixin, db.Model):
     nome = db.Column(db.String(100), nullable=False)
     is_owner = db.Column(db.Boolean, default=True)
     caixa_id = db.Column(db.Integer, db.ForeignKey('caixas.id'), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     
     # Campos para Google OAuth
     profile_pic = db.Column(db.String(500), nullable=True, default='https://www.gravatar.com/avatar/?d=mp&s=200')
@@ -23,7 +23,7 @@ class User(UserMixin, db.Model):
                            back_populates='usuarios',  # <-- Usar back_populates em vez de backref
                            lazy=True)
     
-    vendas = db.relationship('Venda', backref='vendedor', foreign_keys='Venda.vendedor_id', lazy=True)
+    vendas = db.relationship('Venda', backref='vendedor', foreign_keys='Venda.vendedor_id', lazy=True, cascade='all, delete-orphan')
     pagamentos_recebidos = db.relationship('Pagamento', backref='recebedor', foreign_keys='Pagamento.recebedor_id', lazy=True)
     
     @staticmethod
@@ -48,7 +48,7 @@ class Caixa(db.Model):
     nome = db.Column(db.String(100), nullable=False)
     localizacao = db.Column(db.String(200), nullable=False, default='Loja Principal')
     is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     
     # CORREÇÃO 2: Remover owner_id para quebrar o ciclo
     # Em vez disso, o relacionamento é feito via User.caixa_id
@@ -72,7 +72,7 @@ class Cliente(db.Model):
     limite_credito = db.Column(db.Float, default=100000.00)
     saldo_devedor = db.Column(db.Float, default=0)
     observacoes = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     
     vendas = db.relationship('Venda', backref='cliente', foreign_keys='Venda.cliente_id', lazy=True)
 
@@ -84,7 +84,7 @@ class Produto(db.Model):
     descricao = db.Column(db.String(200))
     preco = db.Column(db.Float, nullable=False)
     estoque = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     
     itens_venda = db.relationship('ItemVenda', backref='produto', lazy=True)
 
@@ -92,7 +92,7 @@ class Venda(db.Model):
     __tablename__ = 'vendas'
     
     id = db.Column(db.Integer, primary_key=True)
-    data_venda = db.Column(db.DateTime, default=datetime.utcnow)
+    data_venda = db.Column(db.DateTime, default=datetime.now)
     valor_total = db.Column(db.Float, nullable=False)
     valor_pago = db.Column(db.Float, default=0)
     status = db.Column(db.String(20), default='pendente')
@@ -124,7 +124,7 @@ class Pagamento(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     venda_id = db.Column(db.Integer, db.ForeignKey('vendas.id'), nullable=False)
     valor = db.Column(db.Float, nullable=False)
-    data_pagamento = db.Column(db.DateTime, default=datetime.utcnow)
+    data_pagamento = db.Column(db.DateTime, default=datetime.now)
     forma_pagamento = db.Column(db.String(50))
     recebedor_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     observacoes = db.Column(db.Text)
@@ -151,7 +151,7 @@ class CategoriaDespesa(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(50), nullable=False, unique=True)
     descricao = db.Column(db.String(200))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     
     # Relacionamentos
     despesas = db.relationship('Despesa', backref='categoria', lazy=True)
@@ -163,8 +163,8 @@ class Despesa(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     descricao = db.Column(db.String(200), nullable=False)
     valor = db.Column(db.Float, nullable=False)
-    data_despesa = db.Column(db.Date, nullable=False, default=datetime.utcnow().date)
-    data_registro = db.Column(db.DateTime, default=datetime.utcnow)
+    data_despesa = db.Column(db.Date, nullable=False, default=datetime.now().date)
+    data_registro = db.Column(db.DateTime, default=datetime.now)
     forma_pagamento = db.Column(db.String(50))  # 'dinheiro', 'cartao', 'pix', 'boleto'
     observacoes = db.Column(db.Text)
     
